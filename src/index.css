@@ -1,0 +1,207 @@
+:root {
+  --color-primary: #087f73;
+  --color-primary-light: #0e9f91;
+  --color-gold: #d9a441;
+  --color-gold-hover: #b8862d;
+  --color-gold-light: #f1c27d;
+  --color-cream-bg: #f7e8c6;
+  --color-cream-surface: #fff8e8;
+  --color-ink: #1e1e1e;
+  --color-ink-muted: #6b6b6b;
+  --color-hairline: #e8dcc4;
+  --color-msg-ai: #e3f3ef;
+  --color-msg-user: #fcebcb;
+  --color-danger: #e06c75;
+  --shadow-soft: 0 1px 2px rgba(30, 25, 15, 0.04), 0 2px 8px rgba(30, 25, 15, 0.06);
+  --shadow-panel: 0 1px 3px rgba(30, 25, 15, 0.05);
+  --radius-xl2: 14px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  background: var(--color-cream-bg);
+  color: var(--color-ink);
+  font-size: 15px;
+}
+
+::selection {
+  background: var(--color-gold-light);
+  color: var(--color-ink);
+}
+
+button {
+  font-family: inherit;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  color: rgba(30, 30, 30, 0.55);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.icon-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--color-ink);
+}
+
+.article-prose,
+.article-prose h1,
+.article-prose h2 {
+  font-family: 'Source Serif 4', Georgia, serif;
+}
+
+.article-prose .not-article {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ---------- scrollbars ---------- */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--color-hairline);
+  border-radius: 8px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gold);
+}
+
+.sidebar-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.sidebar-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+}
+
+/* ---------- animations ---------- */
+@keyframes fadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: fadeUp 0.35s ease-out both;
+}
+
+@keyframes chipFlash {
+  0%,
+  100% {
+    background: transparent;
+  }
+  30% {
+    background: var(--color-gold-light);
+  }
+}
+.citation-chip {
+  color: var(--color-primary);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 2px;
+  border-radius: 4px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.citation-chip:hover {
+  background: var(--color-msg-ai);
+}
+.citation-chip.flash {
+  animation: chipFlash 1.1s ease;
+}
+
+@keyframes cardFlash {
+  0% {
+    box-shadow: 0 0 0 0 rgba(217, 164, 65, 0);
+    border-color: var(--color-hairline);
+  }
+  20% {
+    box-shadow: 0 0 0 4px rgba(217, 164, 65, 0.35);
+    border-color: var(--color-gold);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(217, 164, 65, 0);
+    border-color: var(--color-hairline);
+  }
+}
+.source-card.flash-highlight {
+  animation: cardFlash 1.4s ease;
+}
+
+.dot-flash {
+  display: inline-flex;
+  gap: 3px;
+}
+.dot-flash span {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--color-ink-muted);
+  animation: dotFlash 1.1s infinite ease-in-out;
+}
+.dot-flash span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.dot-flash span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes dotFlash {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
