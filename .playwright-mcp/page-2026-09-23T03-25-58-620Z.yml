@@ -1,0 +1,90 @@
+- generic [ref=f2e4]:
+  - complementary [ref=f2e5]:
+    - generic [ref=f2e6]:
+      - generic [ref=f2e7]:
+        - img "PaperAI logo" [ref=f2e9]
+        - generic [ref=f2e10]:
+          - paragraph [ref=f2e11]: PaperAI
+          - paragraph [ref=f2e12]: AI Research Assistant
+      - button "Đóng menu" [ref=f2e13] [cursor=pointer]
+    - button "Bài nghiên cứu mới" [ref=f2e18] [cursor=pointer]
+    - generic [ref=f2e21]:
+      - button "Thư viện" [ref=f2e22] [cursor=pointer]
+      - button "Dự án" [ref=f2e26] [cursor=pointer]
+      - button "Đã lưu" [ref=f2e30] [cursor=pointer]
+      - button "Lịch sử" [ref=f2e34] [cursor=pointer]
+      - button "Thêm" [ref=f2e39] [cursor=pointer]
+    - textbox "Tìm cuộc trò chuyện" [ref=f2e51]:
+      - /placeholder: Tìm cuộc trò chuyện...
+    - navigation [ref=f2e52]:
+      - generic [ref=f2e53]:
+        - paragraph [ref=f2e54]: Hôm nay
+        - button "RAG trong giáo dục" [ref=f2e55] [cursor=pointer]
+        - button "AI trong y tế" [ref=f2e59] [cursor=pointer]
+        - button "IoT Smart Home" [ref=f2e63] [cursor=pointer]
+      - generic [ref=f2e67]:
+        - paragraph [ref=f2e68]: Hôm qua
+        - button "Kubernetes trong triển khai AI" [ref=f2e69] [cursor=pointer]
+        - button "Large Language Model" [ref=f2e73] [cursor=pointer]
+      - generic [ref=f2e77]:
+        - paragraph [ref=f2e78]: 7 ngày qua
+        - button "Computer Vision" [ref=f2e79] [cursor=pointer]
+        - button "AI Agent tự động hoá" [ref=f2e83] [cursor=pointer]
+    - generic [ref=f2e87]:
+      - button "Cài đặt" [ref=f2e88] [cursor=pointer]
+      - generic "Nguyễn Văn A — Premium Plan" [ref=f2e93] [cursor=pointer]:
+        - generic [ref=f2e94]: NA
+        - generic [ref=f2e95]:
+          - paragraph [ref=f2e96]: Nguyễn Văn A
+          - paragraph [ref=f2e97]: Premium Plan
+  - generic [ref=f2e98]:
+    - banner [ref=f2e99]:
+      - generic [ref=f2e100]:
+        - button "Mở menu" [ref=f2e101] [cursor=pointer]
+        - button "Thu gọn/mở rộng sidebar" [ref=f2e103] [cursor=pointer]
+        - generic [ref=f2e106]:
+          - heading "Nghiên cứu mới" [level=1] [ref=f2e107]
+          - paragraph [ref=f2e108]: Chưa bắt đầu
+      - generic [ref=f2e109]:
+        - button [ref=f2e110] [cursor=pointer]
+        - button [ref=f2e114] [cursor=pointer]
+        - button [ref=f2e121] [cursor=pointer]
+        - generic [ref=f2e126]: NA
+    - generic [ref=f2e127]:
+      - main [ref=f2e128]:
+        - generic [ref=f2e130]:
+          - img "PaperAI logo" [ref=f2e132]
+          - heading "Bạn muốn nghiên cứu điều gì?" [level=2] [ref=f2e133]
+          - paragraph [ref=f2e134]: PaperAI sẽ giúp bạn tìm tài liệu, phân tích nguồn và xây dựng bài báo học thuật.
+          - generic [ref=f2e135]:
+            - textbox "Hãy mô tả chủ đề bạn muốn nghiên cứu..." [ref=f2e136]
+            - generic [ref=f2e137]:
+              - button "Đính kèm tệp" [ref=f2e138] [cursor=pointer]
+              - button "Gửi" [ref=f2e141] [cursor=pointer]
+          - generic [ref=f2e144]:
+            - button "Ứng dụng RAG trong giáo dục" [ref=f2e145] [cursor=pointer]
+            - button "AI trong phát hiện gian lận" [ref=f2e146] [cursor=pointer]
+            - button "Ứng dụng LLM trong chăm sóc khách hàng" [ref=f2e147] [cursor=pointer]
+            - button "Kiến trúc Microservices" [ref=f2e148] [cursor=pointer]
+      - complementary [ref=f2e149]:
+        - generic [ref=f2e150]:
+          - generic [ref=f2e151]:
+            - generic [ref=f2e152]:
+              - heading "Research Sources" [level=3] [ref=f2e155]
+              - generic [ref=f2e156]: "0"
+            - generic [ref=f2e157]:
+              - button "Đóng" [ref=f2e158] [cursor=pointer]: ✕
+              - button "Thu gọn panel" [ref=f2e159] [cursor=pointer]
+          - textbox "Search papers..." [ref=f2e166]
+          - generic [ref=f2e167]:
+            - button "All" [ref=f2e168] [cursor=pointer]
+            - button "Selected" [ref=f2e169] [cursor=pointer]
+            - button "High relevance" [ref=f2e170] [cursor=pointer]
+            - button "Recent" [ref=f2e171] [cursor=pointer]
+          - generic [ref=f2e172]:
+            - generic [ref=f2e173]: "Sort:"
+            - combobox [ref=f2e174]:
+              - option "Relevance" [selected]
+              - option "Year"
+              - option "Citation"
+        - paragraph [ref=f2e179]: Các nguồn học thuật sẽ xuất hiện tại đây sau khi bạn bắt đầu nghiên cứu.

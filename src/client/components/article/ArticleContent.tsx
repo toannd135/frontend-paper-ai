@@ -1,5 +1,7 @@
 import { useApp } from '../../state/AppContext'
 import Citation from './Citation'
+import ArticleTable from './ArticleTable'
+import ArticleFigure from './ArticleFigure'
 
 const KEYWORDS = ['RAG', 'Large Language Model', 'Customer Service', 'Semantic Retrieval', 'AI Application']
 
@@ -34,13 +36,9 @@ export default function ArticleContent() {
           năng và đề xuất hướng ứng dụng thực tế {cite(1)}
           {cite(2)}.
         </p>
-        <div className="article-keywords not-article">
-          {KEYWORDS.map((k) => (
-            <span className="article-keyword" key={k}>
-              {k}
-            </span>
-          ))}
-        </div>
+        <p className="article-keywords">
+          <strong>Keywords:</strong> {KEYWORDS.join(', ')}
+        </p>
       </div>
 
       <section className="article-section">
@@ -107,6 +105,28 @@ export default function ArticleContent() {
           Về mặt trải nghiệm người dùng, các nghiên cứu ghi nhận mức độ hài lòng cao hơn khi hệ thống có khả năng
           trích dẫn nguồn thông tin rõ ràng trong phản hồi {cite(7)}.
         </p>
+
+        <ArticleTable
+          number={1}
+          caption="So sánh hiệu năng giữa các kiến trúc hệ thống chăm sóc khách hàng dựa trên LLM."
+          columns={['Kiến trúc', 'Độ chính xác (%)', 'Độ trễ (ms)', 'Tỷ lệ hallucination (%)']}
+          rows={[
+            ['LLM thuần tuý', '71.4', '320', '18.6'],
+            ['RAG (dense retrieval)', '86.2', '540', '6.1'],
+            ['Hybrid RAG', '91.7', '610', '3.4'],
+          ]}
+        />
+
+        <ArticleFigure
+          number={1}
+          caption="Độ chính xác phản hồi (%) theo từng kiến trúc hệ thống được khảo sát."
+          data={[
+            { label: 'LLM', value: 71.4 },
+            { label: 'RAG', value: 86.2 },
+            { label: 'Hybrid RAG', value: 91.7 },
+          ]}
+          unit="%"
+        />
       </section>
 
       <section className="article-section">

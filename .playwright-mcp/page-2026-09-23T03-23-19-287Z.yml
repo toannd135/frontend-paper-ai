@@ -1,0 +1,362 @@
+- generic [ref=e4]:
+  - complementary [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - img "PaperAI logo" [ref=e9]
+        - generic [ref=e10]:
+          - paragraph [ref=e11]: PaperAI
+          - paragraph [ref=e12]: AI Research Assistant
+      - button "Đóng menu" [ref=e13] [cursor=pointer]
+    - button "Bài nghiên cứu mới" [ref=e18] [cursor=pointer]
+    - generic [ref=e21]:
+      - button "Thư viện" [ref=e22] [cursor=pointer]
+      - button "Dự án" [ref=e26] [cursor=pointer]
+      - button "Đã lưu" [ref=e30] [cursor=pointer]
+      - button "Lịch sử" [ref=e34] [cursor=pointer]
+      - button "Thêm" [ref=e39] [cursor=pointer]
+    - textbox "Tìm cuộc trò chuyện" [ref=e51]:
+      - /placeholder: Tìm cuộc trò chuyện...
+    - navigation [ref=e52]:
+      - generic [ref=e53]:
+        - paragraph [ref=e54]: Hôm nay
+        - button "RAG trong giáo dục" [ref=e55] [cursor=pointer]
+        - button "AI trong y tế" [ref=e59] [cursor=pointer]
+        - button "IoT Smart Home" [ref=e63] [cursor=pointer]
+      - generic [ref=e67]:
+        - paragraph [ref=e68]: Hôm qua
+        - button "Kubernetes trong triển khai AI" [ref=e69] [cursor=pointer]
+        - button "Large Language Model" [ref=e73] [cursor=pointer]
+      - generic [ref=e77]:
+        - paragraph [ref=e78]: 7 ngày qua
+        - button "Computer Vision" [ref=e79] [cursor=pointer]
+        - button "AI Agent tự động hoá" [ref=e83] [cursor=pointer]
+    - generic [ref=e87]:
+      - button "Cài đặt" [ref=e88] [cursor=pointer]
+      - generic "Nguyễn Văn A — Premium Plan" [ref=e93] [cursor=pointer]:
+        - generic [ref=e94]: NA
+        - generic [ref=e95]:
+          - paragraph [ref=e96]: Nguyễn Văn A
+          - paragraph [ref=e97]: Premium Plan
+  - generic [ref=e98]:
+    - banner [ref=e99]:
+      - generic [ref=e100]:
+        - button "Mở menu" [ref=e101] [cursor=pointer]
+        - button "Thu gọn/mở rộng sidebar" [ref=e103] [cursor=pointer]
+        - generic [ref=e106]:
+          - heading "Ứng dụng RAG trong giáo dục" [level=1] [ref=e180]
+          - paragraph [ref=e108]: 12 nguồn đã tìm thấy
+      - button "Graph" [ref=e345] [cursor=pointer]
+      - generic [ref=e109]:
+        - button [ref=e110] [cursor=pointer]
+        - button [ref=e114] [cursor=pointer]
+        - button [ref=e121] [cursor=pointer]
+        - generic [ref=e126]: NA
+    - generic [ref=e127]:
+      - main [ref=e128]:
+        - generic [ref=e181]:
+          - generic [ref=e182]:
+            - generic [ref=e183]: Ứng dụng RAG trong giáo dục
+            - img "PaperAI" [ref=e187]
+            - generic [ref=e211]:
+              - img "PaperAI" [ref=e213]
+              - generic [ref=e214]: Tôi đã hiểu chủ đề nghiên cứu của bạn. Để xây dựng một bài báo phù hợp hơn, tôi cần xác định thêm một vài thông tin.
+            - generic [ref=e215]:
+              - img "PaperAI" [ref=e217]
+              - generic [ref=e218]:
+                - generic [ref=e219]: Bạn muốn bài báo tập trung vào khía cạnh nào?
+                - generic [ref=e220]:
+                  - button "Kiến trúc hệ thống" [disabled] [ref=e221]
+                  - button "Đánh giá hiệu năng" [disabled] [ref=e225]
+                  - button "So sánh RAG và LLM" [disabled] [ref=e227]
+                  - button "Ứng dụng thực tế" [disabled] [ref=e229]
+            - generic [ref=e231]: Kiến trúc hệ thống
+            - generic [ref=e233]:
+              - img "PaperAI" [ref=e235]
+              - generic [ref=e236]:
+                - generic [ref=e237]: Bạn muốn sử dụng tài liệu trong khoảng thời gian nào?
+                - generic [ref=e238]:
+                  - button "Tất cả" [disabled] [ref=e239]
+                  - button "2022" [disabled] [ref=e241]
+                  - button "2023" [disabled] [ref=e243]
+                  - button "2024" [disabled] [ref=e245]
+                  - button "2025" [disabled] [ref=e247]
+                  - button "2026" [disabled] [ref=e249]
+            - generic [ref=e253]: Tất cả
+            - generic [ref=e255]:
+              - img "PaperAI" [ref=e257]
+              - generic [ref=e258]:
+                - generic [ref=e259]: Bạn muốn bài báo dài khoảng bao nhiêu?
+                - generic [ref=e260]:
+                  - button "5 trang" [disabled] [ref=e261]
+                  - button "10 trang" [disabled] [ref=e263]
+                  - button "15 trang" [disabled] [ref=e265]
+                  - button "20+ trang" [disabled] [ref=e267]
+            - generic [ref=e271]: 10 trang
+            - generic [ref=e281]:
+              - img "PaperAI" [ref=e283]
+              - generic [ref=e284]: "Cảm ơn bạn! Đây là bản đặc tả nghiên cứu tôi đã tổng hợp:"
+            - generic [ref=e287]:
+              - generic [ref=e288]: Research Specification
+              - generic [ref=e293]:
+                - generic [ref=e294]:
+                  - paragraph [ref=e295]: Topic
+                  - paragraph [ref=e296]: Ứng dụng RAG trong giáo dục
+                - generic [ref=e297]:
+                  - paragraph [ref=e298]: Focus
+                  - paragraph [ref=e299]: Kiến trúc hệ thống
+                - generic [ref=e300]:
+                  - paragraph [ref=e301]: Publication years
+                  - paragraph [ref=e302]: 2022 – 2026
+                - generic [ref=e303]:
+                  - paragraph [ref=e304]: Article length
+                  - paragraph [ref=e305]: 10 trang
+                - generic [ref=e306]:
+                  - paragraph [ref=e307]: Sources
+                  - paragraph [ref=e308]: Academic papers
+              - button "Đã bắt đầu" [disabled] [ref=e310]
+            - generic [ref=e315]:
+              - img "PaperAI" [ref=e317]
+              - generic [ref=e318]: Đang nghiên cứu chủ đề của bạn...
+            - generic [ref=e323]:
+              - generic [ref=e324]: Phân tích chủ đề
+              - generic [ref=e329]: Xây dựng từ khóa
+              - generic [ref=e332]: Tìm kiếm nguồn học thuật
+              - generic [ref=e335]: Đang phân tích bài báo
+              - generic [ref=e338]: Xếp hạng nguồn
+              - generic [ref=e341]: Chuẩn bị tổng hợp
+            - generic [ref=e358]:
+              - img "PaperAI" [ref=e360]
+              - generic [ref=e361]: ✓ Tôi đã tìm được 12 nguồn phù hợp. Tôi đã phân tích và xếp hạng các nguồn theo mức độ liên quan đến chủ đề nghiên cứu. Bạn có thể xem toàn bộ nguồn ở Research Sources bên phải. Tôi đã chọn 8 nguồn phù hợp nhất để sử dụng trong bài báo.
+            - button "Tạo bài báo" [ref=e364] [cursor=pointer]
+          - generic [ref=e201]:
+            - generic [ref=e202]:
+              - textbox "Nhắn tin cho PaperAI..." [ref=e203]
+              - button "Đính kèm tệp" [ref=e204] [cursor=pointer]
+              - button [ref=e207] [cursor=pointer]
+            - paragraph [ref=e210]: PaperAI có thể tạo nội dung chưa chính xác — hãy luôn kiểm tra lại nguồn.
+      - complementary [ref=e149]:
+        - generic [ref=e150]:
+          - generic [ref=e151]:
+            - generic [ref=e152]:
+              - heading "Research Sources" [level=3] [ref=e155]
+              - generic [ref=e156]: "12"
+            - generic [ref=e157]:
+              - button "Đóng" [ref=e158] [cursor=pointer]: ✕
+              - button "Thu gọn panel" [ref=e159] [cursor=pointer]
+          - textbox "Search papers..." [ref=e166]
+          - generic [ref=e167]:
+            - button "All" [ref=e168] [cursor=pointer]
+            - button "Selected" [ref=e169] [cursor=pointer]
+            - button "High relevance" [ref=e170] [cursor=pointer]
+            - button "Recent" [ref=e171] [cursor=pointer]
+          - generic [ref=e172]:
+            - generic [ref=e173]: "Sort:"
+            - combobox [ref=e174]:
+              - option "Relevance" [selected]
+              - option "Year"
+              - option "Citation"
+        - generic [ref=e175]:
+          - generic [ref=e368] [cursor=pointer]:
+            - generic [ref=e369]:
+              - paragraph [ref=e370]: "Retrieval-Augmented Generation: A Comprehensive Survey"
+              - generic [ref=e371]: Selected
+            - paragraph [ref=e374]: Lewis, P. et al.
+            - generic [ref=e375]:
+              - generic [ref=e376]: "2024"
+              - generic [ref=e377]: ·
+              - generic [ref=e378]: arXiv
+              - generic [ref=e379]: ·
+              - generic [ref=e380]: Preprint
+            - generic [ref=e381]:
+              - generic [ref=e382]: 94%
+              - generic [ref=e386]: "812"
+            - generic [ref=e390]:
+              - button "View" [ref=e391]
+              - button "Remove" [ref=e392]
+          - generic [ref=e393] [cursor=pointer]:
+            - generic [ref=e394]:
+              - paragraph [ref=e395]: Retrieval Augmented Generation for Knowledge-Intensive NLP Ta…
+              - generic [ref=e396]: Selected
+            - paragraph [ref=e399]: Guu, K., Lee, K. et al.
+            - generic [ref=e400]:
+              - generic [ref=e401]: "2023"
+              - generic [ref=e402]: ·
+              - generic [ref=e403]: ACM
+              - generic [ref=e404]: ·
+              - generic [ref=e405]: Conference Paper
+            - generic [ref=e406]:
+              - generic [ref=e407]: 91%
+              - generic [ref=e411]: "1204"
+            - generic [ref=e415]:
+              - button "View" [ref=e416]
+              - button "Remove" [ref=e417]
+          - generic [ref=e418] [cursor=pointer]:
+            - generic [ref=e419]:
+              - paragraph [ref=e420]: "LLM-based Customer Service Automation: A Framework"
+              - generic [ref=e421]: Selected
+            - paragraph [ref=e424]: Chen, Y., Park, S.
+            - generic [ref=e425]:
+              - generic [ref=e426]: "2025"
+              - generic [ref=e427]: ·
+              - generic [ref=e428]: IEEE
+              - generic [ref=e429]: ·
+              - generic [ref=e430]: Journal Article
+            - generic [ref=e431]:
+              - generic [ref=e432]: 88%
+              - generic [ref=e436]: "156"
+            - generic [ref=e440]:
+              - button "View" [ref=e441]
+              - button "Remove" [ref=e442]
+          - generic [ref=e443] [cursor=pointer]:
+            - generic [ref=e444]:
+              - paragraph [ref=e445]: Evaluating Response Quality in RAG-based Chatbots
+              - generic [ref=e446]: Selected
+            - paragraph [ref=e449]: Nguyen, T., Tran, M.
+            - generic [ref=e450]:
+              - generic [ref=e451]: "2024"
+              - generic [ref=e452]: ·
+              - generic [ref=e453]: Springer
+              - generic [ref=e454]: ·
+              - generic [ref=e455]: Journal Article
+            - generic [ref=e456]:
+              - generic [ref=e457]: 86%
+              - generic [ref=e461]: "94"
+            - generic [ref=e465]:
+              - button "View" [ref=e466]
+              - button "Remove" [ref=e467]
+          - generic [ref=e468] [cursor=pointer]:
+            - generic [ref=e469]:
+              - paragraph [ref=e470]: Hybrid Retrieval Strategies for Enterprise Support Systems
+              - generic [ref=e471]: Selected
+            - paragraph [ref=e474]: Alvarez, D. et al.
+            - generic [ref=e475]:
+              - generic [ref=e476]: "2023"
+              - generic [ref=e477]: ·
+              - generic [ref=e478]: ACL Anthology
+              - generic [ref=e479]: ·
+              - generic [ref=e480]: Conference Paper
+            - generic [ref=e481]:
+              - generic [ref=e482]: 83%
+              - generic [ref=e486]: "210"
+            - generic [ref=e490]:
+              - button "View" [ref=e491]
+              - button "Remove" [ref=e492]
+          - generic [ref=e493] [cursor=pointer]:
+            - generic [ref=e494]:
+              - paragraph [ref=e495]: "Vector Databases and Semantic Search: A Practical Guide"
+              - generic [ref=e496]: Selected
+            - paragraph [ref=e499]: Okafor, C., Wright, B.
+            - generic [ref=e500]:
+              - generic [ref=e501]: "2022"
+              - generic [ref=e502]: ·
+              - generic [ref=e503]: arXiv
+              - generic [ref=e504]: ·
+              - generic [ref=e505]: Preprint
+            - generic [ref=e506]:
+              - generic [ref=e507]: 79%
+              - generic [ref=e511]: "341"
+            - generic [ref=e515]:
+              - button "View" [ref=e516]
+              - button "Remove" [ref=e517]
+          - generic [ref=e518] [cursor=pointer]:
+            - generic [ref=e519]:
+              - paragraph [ref=e520]: Customer Experience Impact of Conversational AI in E-commerce
+              - generic [ref=e521]: Selected
+            - paragraph [ref=e524]: Kim, J., Silva, R.
+            - generic [ref=e525]:
+              - generic [ref=e526]: "2024"
+              - generic [ref=e527]: ·
+              - generic [ref=e528]: Elsevier
+              - generic [ref=e529]: ·
+              - generic [ref=e530]: Journal Article
+            - generic [ref=e531]:
+              - generic [ref=e532]: 77%
+              - generic [ref=e536]: "63"
+            - generic [ref=e540]:
+              - button "View" [ref=e541]
+              - button "Remove" [ref=e542]
+          - generic [ref=e543] [cursor=pointer]:
+            - generic [ref=e544]:
+              - paragraph [ref=e545]: Fine-tuning vs. Retrieval Augmentation for Domain Adaptation
+              - generic [ref=e546]: Selected
+            - paragraph [ref=e549]: Popescu, A. et al.
+            - generic [ref=e550]:
+              - generic [ref=e551]: "2023"
+              - generic [ref=e552]: ·
+              - generic [ref=e553]: NeurIPS
+              - generic [ref=e554]: ·
+              - generic [ref=e555]: Conference Paper
+            - generic [ref=e556]:
+              - generic [ref=e557]: 75%
+              - generic [ref=e561]: "288"
+            - generic [ref=e565]:
+              - button "View" [ref=e566]
+              - button "Remove" [ref=e567]
+          - generic [ref=e568] [cursor=pointer]:
+            - generic [ref=e569]:
+              - paragraph [ref=e570]: Latency and Cost Trade-offs in Production RAG Pipelines
+              - generic [ref=e571]: Found
+            - paragraph [ref=e572]: Zhang, L., Osei, K.
+            - generic [ref=e573]:
+              - generic [ref=e574]: "2025"
+              - generic [ref=e575]: ·
+              - generic [ref=e576]: IEEE
+              - generic [ref=e577]: ·
+              - generic [ref=e578]: Journal Article
+            - generic [ref=e579]:
+              - generic [ref=e580]: 72%
+              - generic [ref=e584]: "41"
+            - generic [ref=e588]:
+              - button "View" [ref=e589]
+              - button "Use" [ref=e590]
+          - generic [ref=e591] [cursor=pointer]:
+            - generic [ref=e592]:
+              - paragraph [ref=e593]: A Taxonomy of Grounding Techniques for Large Language Models
+              - generic [ref=e594]: Found
+            - paragraph [ref=e595]: Fischer, M., Haddad, R.
+            - generic [ref=e596]:
+              - generic [ref=e597]: "2022"
+              - generic [ref=e598]: ·
+              - generic [ref=e599]: ACM
+              - generic [ref=e600]: ·
+              - generic [ref=e601]: Survey
+            - generic [ref=e602]:
+              - generic [ref=e603]: 68%
+              - generic [ref=e607]: "402"
+            - generic [ref=e611]:
+              - button "View" [ref=e612]
+              - button "Use" [ref=e613]
+          - generic [ref=e614] [cursor=pointer]:
+            - generic [ref=e615]:
+              - paragraph [ref=e616]: "User Trust in AI-Driven Customer Support: An Empirical Study"
+              - generic [ref=e617]: Found
+            - paragraph [ref=e618]: Dubois, E., Kwan, H.
+            - generic [ref=e619]:
+              - generic [ref=e620]: "2024"
+              - generic [ref=e621]: ·
+              - generic [ref=e622]: Springer
+              - generic [ref=e623]: ·
+              - generic [ref=e624]: Journal Article
+            - generic [ref=e625]:
+              - generic [ref=e626]: 65%
+              - generic [ref=e630]: "37"
+            - generic [ref=e634]:
+              - button "View" [ref=e635]
+              - button "Use" [ref=e636]
+          - generic [ref=e637] [cursor=pointer]:
+            - generic [ref=e638]:
+              - paragraph [ref=e639]: Multi-hop Reasoning with Retrieval-Augmented Transformers
+              - generic [ref=e640]: Found
+            - paragraph [ref=e641]: Rahman, S. et al.
+            - generic [ref=e642]:
+              - generic [ref=e643]: "2023"
+              - generic [ref=e644]: ·
+              - generic [ref=e645]: arXiv
+              - generic [ref=e646]: ·
+              - generic [ref=e647]: Preprint
+            - generic [ref=e648]:
+              - generic [ref=e649]: 61%
+              - generic [ref=e653]: "175"
+            - generic [ref=e657]:
+              - button "View" [ref=e658]
+              - button "Use" [ref=e659]

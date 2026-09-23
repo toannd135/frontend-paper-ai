@@ -1,0 +1,104 @@
+- generic [ref=e4]:
+  - complementary [ref=e5]:
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - img "PaperAI logo" [ref=e9]
+        - generic [ref=e10]:
+          - paragraph [ref=e11]: PaperAI
+          - paragraph [ref=e12]: AI Research Assistant
+      - button "Đóng menu" [ref=e13] [cursor=pointer]
+    - button "Bài nghiên cứu mới" [ref=e18] [cursor=pointer]
+    - textbox "Tìm cuộc trò chuyện" [ref=e26]:
+      - /placeholder: Tìm cuộc trò chuyện...
+    - navigation [ref=e27]:
+      - generic [ref=e28]:
+        - paragraph [ref=e29]: Hôm nay
+        - button "RAG trong giáo dục" [ref=e30] [cursor=pointer]
+        - button "AI trong y tế" [ref=e35] [cursor=pointer]
+        - button "IoT Smart Home" [ref=e40] [cursor=pointer]
+      - generic [ref=e45]:
+        - paragraph [ref=e46]: Hôm qua
+        - button "Kubernetes trong triển khai AI" [ref=e47] [cursor=pointer]
+        - button "Large Language Model" [ref=e52] [cursor=pointer]
+      - generic [ref=e57]:
+        - paragraph [ref=e58]: 7 ngày qua
+        - button "Computer Vision" [ref=e59] [cursor=pointer]
+        - button "AI Agent tự động hoá" [ref=e64] [cursor=pointer]
+    - generic [ref=e69]:
+      - button "Cài đặt" [ref=e70] [cursor=pointer]
+      - generic "Nguyễn Văn A — Premium Plan" [ref=e75] [cursor=pointer]:
+        - generic [ref=e76]: NA
+        - generic [ref=e77]:
+          - paragraph [ref=e78]: Nguyễn Văn A
+          - paragraph [ref=e79]: Premium Plan
+  - generic [ref=e80]:
+    - banner [ref=e81]:
+      - generic [ref=e82]:
+        - button "Mở menu" [ref=e83] [cursor=pointer]
+        - button "Thu gọn/mở rộng sidebar" [ref=e85] [cursor=pointer]
+        - generic [ref=e88]:
+          - heading "Ứng dụng RAG trong giáo dục" [level=1] [ref=e166]
+          - paragraph [ref=e90]: Đang làm rõ yêu cầu nghiên cứu
+      - generic [ref=e91]:
+        - button [ref=e92] [cursor=pointer]
+        - button [ref=e96] [cursor=pointer]
+        - button [ref=e103] [cursor=pointer]
+        - generic [ref=e112]: NA
+    - generic [ref=e113]:
+      - main [ref=e114]:
+        - generic [ref=e167]:
+          - generic [ref=e168]:
+            - generic [ref=e169]: Ứng dụng RAG trong giáo dục
+            - img "PaperAI" [ref=e173]
+            - generic [ref=e179]:
+              - img "PaperAI" [ref=e181]
+              - generic [ref=e182]: Tôi đã hiểu chủ đề nghiên cứu của bạn. Để xây dựng một bài báo phù hợp hơn, tôi cần xác định thêm một vài thông tin.
+            - generic [ref=e193]:
+              - img "PaperAI" [ref=e195]
+              - generic [ref=e196]:
+                - generic [ref=e197]: Bạn muốn bài báo tập trung vào khía cạnh nào?
+                - generic [ref=e198]:
+                  - button "Kiến trúc hệ thống" [disabled] [ref=e199]
+                  - button "Đánh giá hiệu năng" [disabled] [ref=e201]
+                  - button "So sánh RAG và LLM" [disabled] [ref=e203]
+                  - button "Ứng dụng thực tế" [disabled] [ref=e205]
+            - generic [ref=e209]: Kiến trúc hệ thống
+            - generic [ref=e211]:
+              - img "PaperAI" [ref=e213]
+              - generic [ref=e214]:
+                - generic [ref=e215]: Bạn muốn sử dụng tài liệu trong khoảng thời gian nào?
+                - generic [ref=e216]:
+                  - button "Tất cả" [ref=e217] [cursor=pointer]
+                  - button "2022" [ref=e219] [cursor=pointer]
+                  - button "2023" [ref=e221] [cursor=pointer]
+                  - button "2024" [ref=e223] [cursor=pointer]
+                  - button "2025" [ref=e225] [cursor=pointer]
+                  - button "2026" [ref=e227] [cursor=pointer]
+          - generic [ref=e183]:
+            - generic [ref=e184]:
+              - textbox "Nhắn tin cho PaperAI..." [ref=e185]
+              - button "Đính kèm tệp" [ref=e186] [cursor=pointer]
+              - button [ref=e189] [cursor=pointer]
+            - paragraph [ref=e192]: PaperAI có thể tạo nội dung chưa chính xác — hãy luôn kiểm tra lại nguồn.
+      - complementary [ref=e135]:
+        - generic [ref=e136]:
+          - generic [ref=e137]:
+            - generic [ref=e138]:
+              - heading "Research Sources" [level=3] [ref=e141]
+              - generic [ref=e142]: "0"
+            - generic [ref=e143]:
+              - button "Đóng" [ref=e144] [cursor=pointer]: ✕
+              - button "Thu gọn panel" [ref=e145] [cursor=pointer]
+          - textbox "Search papers..." [ref=e152]
+          - generic [ref=e153]:
+            - button "All" [ref=e154] [cursor=pointer]
+            - button "Selected" [ref=e155] [cursor=pointer]
+            - button "High relevance" [ref=e156] [cursor=pointer]
+            - button "Recent" [ref=e157] [cursor=pointer]
+          - generic [ref=e158]:
+            - generic [ref=e159]: "Sort:"
+            - combobox [ref=e160]:
+              - option "Relevance" [selected]
+              - option "Year"
+              - option "Citation"
+        - paragraph [ref=e165]: Các nguồn học thuật sẽ xuất hiện tại đây sau khi bạn bắt đầu nghiên cứu.

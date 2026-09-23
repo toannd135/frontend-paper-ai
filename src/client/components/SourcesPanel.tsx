@@ -42,7 +42,7 @@ export default function SourcesPanel({ mobileOpen, onCloseDrawer }: SourcesPanel
   if (state.sourceSort === 'citation') items.sort((a, b) => b.citations - a.citations)
 
   return (
-    <aside className={`sources-panel${mobileOpen ? ' mobile-open' : ''}`}>
+    <aside className={`sources-panel${mobileOpen ? ' mobile-open' : ''}${!state.sourcesPanelOpen ? ' collapsed' : ''}`}>
       <div className="sources-panel-head">
         <div className="sources-panel-title">
           <div className="sources-panel-title-left">

@@ -7,7 +7,7 @@ export type Stage =
   | 'generating'
   | 'article'
 
-export type ActiveTab = 'research' | 'article'
+export type ActiveTab = 'research' | 'article' | 'graph'
 
 export type SourceFilter = 'all' | 'selected' | 'high' | 'recent'
 
@@ -36,6 +36,14 @@ export interface ResearchSourceRaw {
 export interface ResearchSource extends ResearchSourceRaw {
   id: string
   status: 'found' | 'rejected'
+}
+
+export type SourceRelationKind = 'cites' | 'related'
+
+export interface SourceRelation {
+  source: string
+  target: string
+  kind: SourceRelationKind
 }
 
 export type ChatMessage =

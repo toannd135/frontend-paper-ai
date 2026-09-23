@@ -1,0 +1,85 @@
+- generic [ref=f6e4]:
+  - complementary [ref=f6e5]:
+    - generic [ref=f6e7]:
+      - img "PaperAI logo" [ref=f6e9]
+      - generic [ref=f6e10]:
+        - paragraph [ref=f6e11]: PaperAI
+        - paragraph [ref=f6e12]: AI Research Assistant
+    - button "Bài nghiên cứu mới" [ref=f6e14] [cursor=pointer]
+    - generic [ref=f6e17]:
+      - button "Thư viện" [ref=f6e18] [cursor=pointer]
+      - button "Dự án" [ref=f6e22] [cursor=pointer]
+      - button "Đã lưu" [ref=f6e26] [cursor=pointer]
+      - button "Lịch sử" [ref=f6e30] [cursor=pointer]
+      - button "Thêm" [ref=f6e35] [cursor=pointer]
+    - textbox "Tìm cuộc trò chuyện" [ref=f6e47]:
+      - /placeholder: Tìm cuộc trò chuyện...
+    - navigation [ref=f6e48]:
+      - generic [ref=f6e49]:
+        - paragraph [ref=f6e50]: Hôm nay
+        - button "RAG trong giáo dục" [ref=f6e51] [cursor=pointer]
+        - button "AI trong y tế" [ref=f6e55] [cursor=pointer]
+        - button "IoT Smart Home" [ref=f6e59] [cursor=pointer]
+      - generic [ref=f6e63]:
+        - paragraph [ref=f6e64]: Hôm qua
+        - button "Kubernetes trong triển khai AI" [ref=f6e65] [cursor=pointer]
+        - button "Large Language Model" [ref=f6e69] [cursor=pointer]
+      - generic [ref=f6e73]:
+        - paragraph [ref=f6e74]: 7 ngày qua
+        - button "Computer Vision" [ref=f6e75] [cursor=pointer]
+        - button "AI Agent tự động hoá" [ref=f6e79] [cursor=pointer]
+    - generic [ref=f6e84]:
+      - generic "Nguyễn Văn A — Premium Plan" [ref=f6e85] [cursor=pointer]:
+        - generic [ref=f6e86]: NA
+        - generic [ref=f6e87]:
+          - paragraph [ref=f6e88]: Nguyễn Văn A
+          - paragraph [ref=f6e89]: Premium Plan
+      - button "Cài đặt" [ref=f6e90] [cursor=pointer]
+  - generic [ref=f6e94]:
+    - banner [ref=f6e95]:
+      - generic [ref=f6e96]:
+        - button "Thu gọn/mở rộng sidebar" [ref=f6e97] [cursor=pointer]
+        - generic [ref=f6e100]:
+          - heading "Nghiên cứu mới" [level=1] [ref=f6e101]
+          - paragraph [ref=f6e102]: Chưa bắt đầu
+      - generic [ref=f6e103]:
+        - button [ref=f6e104] [cursor=pointer]
+        - button [ref=f6e108] [cursor=pointer]
+        - button [ref=f6e115] [cursor=pointer]
+        - generic [ref=f6e120]: NA
+    - generic [ref=f6e121]:
+      - main [ref=f6e122]:
+        - generic [ref=f6e124]:
+          - img "PaperAI logo" [ref=f6e126]
+          - heading "Bạn muốn nghiên cứu điều gì?" [level=2] [ref=f6e127]
+          - paragraph [ref=f6e128]: PaperAI sẽ giúp bạn tìm tài liệu, phân tích nguồn và xây dựng bài báo học thuật.
+          - generic [ref=f6e129]:
+            - textbox "Hãy mô tả chủ đề bạn muốn nghiên cứu..." [ref=f6e130]
+            - generic [ref=f6e131]:
+              - button "Đính kèm tệp" [ref=f6e132] [cursor=pointer]
+              - button "Gửi" [ref=f6e135] [cursor=pointer]
+          - generic [ref=f6e138]:
+            - button "Ứng dụng RAG trong giáo dục" [ref=f6e139] [cursor=pointer]
+            - button "AI trong phát hiện gian lận" [ref=f6e140] [cursor=pointer]
+            - button "Ứng dụng LLM trong chăm sóc khách hàng" [ref=f6e141] [cursor=pointer]
+            - button "Kiến trúc Microservices" [ref=f6e142] [cursor=pointer]
+      - complementary [ref=f6e143]:
+        - generic [ref=f6e144]:
+          - generic [ref=f6e145]:
+            - generic [ref=f6e146]:
+              - heading "Research Sources" [level=3] [ref=f6e149]
+              - generic [ref=f6e150]: "0"
+            - button "Thu gọn panel" [ref=f6e152] [cursor=pointer]
+          - textbox "Search papers..." [ref=f6e159]
+          - generic [ref=f6e160]:
+            - button "All" [ref=f6e161] [cursor=pointer]
+            - button "Selected" [ref=f6e162] [cursor=pointer]
+            - button "High relevance" [ref=f6e163] [cursor=pointer]
+            - button "Recent" [ref=f6e164] [cursor=pointer]
+          - generic [ref=f6e165]:
+            - generic [ref=f6e166]: "Sort:"
+            - combobox [ref=f6e167]:
+              - option "Relevance" [selected]
+              - option "Year"
+              - option "Citation"
+        - paragraph [ref=f6e172]: Các nguồn học thuật sẽ xuất hiện tại đây sau khi bạn bắt đầu nghiên cứu.

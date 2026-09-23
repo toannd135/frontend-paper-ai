@@ -24,7 +24,10 @@ export default function Header({
   onSetActiveTab,
   onOpenSourcesDrawer,
 }: HeaderProps) {
-  const showModeTabs = stage === 'article'
+  const showResearchTab = sourceCount > 0
+  const showArticleTab = stage === 'article'
+  const showGraphTab = sourceCount > 0
+  const showModeTabs = showResearchTab || showArticleTab || showGraphTab
 
   return (
     <header className="app-header">
@@ -48,18 +51,30 @@ export default function Header({
 
       {showModeTabs && (
         <div className="mode-tabs">
-          <button
-            onClick={() => onSetActiveTab('research')}
-            className={`mode-tab${activeTab === 'research' ? ' active' : ''}`}
-          >
-            Research
-          </button>
-          <button
-            onClick={() => onSetActiveTab('article')}
-            className={`mode-tab${activeTab === 'article' ? ' active' : ''}`}
-          >
-            Article
-          </button>
+          {showResearchTab && (
+            <button
+              onClick={() => onSetActiveTab('research')}
+              className={`mode-tab${activeTab === 'research' ? ' active' : ''}`}
+            >
+              Research
+            </button>
+          )}
+          {showArticleTab && (
+            <button
+              onClick={() => onSetActiveTab('article')}
+              className={`mode-tab${activeTab === 'article' ? ' active' : ''}`}
+            >
+              Article
+            </button>
+          )}
+          {showGraphTab && (
+            <button
+              onClick={() => onSetActiveTab('graph')}
+              className={`mode-tab${activeTab === 'graph' ? ' active' : ''}`}
+            >
+              Graph
+            </button>
+          )}
         </div>
       )}
 

@@ -1,4 +1,4 @@
-import { Plus, Search, Settings, FileText, X } from 'lucide-react'
+import { Plus, Search, Settings, Circle, X, Library, FolderKanban, Bookmark, Clock, MoreHorizontal } from 'lucide-react'
 import { mockConversations } from '../../data/mock'
 import logo from '../../assets/logo.png'
 
@@ -55,6 +55,31 @@ export default function Sidebar({
         </button>
       </div>
 
+      <div className="sidebar-quicknav">
+        <button className="sidebar-footer-btn" title="Thư viện">
+          <Library size={16} />
+          <span className="sidebar-label">Thư viện</span>
+        </button>
+        <button className="sidebar-footer-btn" title="Dự án">
+          <FolderKanban size={16} />
+          <span className="sidebar-label">Dự án</span>
+        </button>
+        <button className="sidebar-footer-btn" title="Đã lưu">
+          <Bookmark size={16} />
+          <span className="sidebar-label">Đã lưu</span>
+        </button>
+        <button className="sidebar-footer-btn" title="Lịch sử">
+          <Clock size={16} />
+          <span className="sidebar-label">Lịch sử</span>
+        </button>
+        <button className="sidebar-footer-btn" title="Thêm">
+          <MoreHorizontal size={16} />
+          <span className="sidebar-label">Thêm</span>
+        </button>
+      </div>
+
+      <div className="sidebar-divider" />
+
       <div className="sidebar-search-wrap sidebar-label">
         <div className="sidebar-search">
           <Search size={14} />
@@ -73,7 +98,7 @@ export default function Sidebar({
                 onClick={() => onSelectConversation(c.id)}
                 className={`conv-item${c.id === activeConversationId ? ' active' : ''}`}
               >
-                <FileText size={14} />
+                <Circle size={14} strokeWidth={1.5} />
                 <span className="sidebar-label" style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {c.title}
                 </span>
@@ -84,16 +109,17 @@ export default function Sidebar({
       </nav>
 
       <div className="sidebar-footer">
-        <button className="sidebar-footer-btn" title="Cài đặt">
-          <Settings size={16} />
-          <span className="sidebar-label">Cài đặt</span>
-        </button>
-        <div className="sidebar-user" title="Nguyễn Văn A — Premium Plan">
-          <div className="sidebar-avatar">NA</div>
-          <div className="sidebar-user-text sidebar-label">
-            <p>Nguyễn Văn A</p>
-            <p>Premium Plan</p>
+        <div className="sidebar-user-row">
+          <div className="sidebar-user" title="Nguyễn Văn A — Premium Plan">
+            <div className="sidebar-avatar">NA</div>
+            <div className="sidebar-user-text sidebar-label">
+              <p>Nguyễn Văn A</p>
+              <p>Premium Plan</p>
+            </div>
           </div>
+          <button className="sidebar-footer-btn sidebar-settings-btn" title="Cài đặt" aria-label="Cài đặt">
+            <Settings size={16} />
+          </button>
         </div>
       </div>
     </aside>
