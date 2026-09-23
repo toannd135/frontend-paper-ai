@@ -10,6 +10,15 @@ node_modules
 dist
 dist-ssr
 *.local
+*.tsbuildinfo
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Test coverage
+coverage
 
 # Editor
 .vscode/*
@@ -28,3 +37,6 @@ dist-ssr
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Playwright MCP tool output (screenshots/snapshots/console logs from agent-driven browsing)
+.playwright-mcp/
