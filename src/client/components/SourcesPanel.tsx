@@ -110,7 +110,15 @@ export default function SourcesPanel({ mobileOpen, onCloseDrawer }: SourcesPanel
             <p>Các nguồn học thuật sẽ xuất hiện tại đây sau khi bạn bắt đầu nghiên cứu.</p>
           </div>
         ) : items.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--color-ink-muted)', fontSize: 13 }}>
+          <div
+            style={{
+              gridColumn: '1 / -1',
+              textAlign: 'center',
+              padding: '40px 0',
+              color: 'var(--color-ink-muted)',
+              fontSize: 13,
+            }}
+          >
             Không tìm thấy nguồn phù hợp.
           </div>
         ) : (

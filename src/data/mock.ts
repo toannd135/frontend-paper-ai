@@ -1,4 +1,4 @@
-import type { Conversation, ResearchQuestion, ResearchSourceRaw, SourceRelation } from '../types'
+import type { Conversation, ResearchQuestion } from '../types'
 
 export const mockConversations: Record<string, Conversation[]> = {
   'Hôm nay': [
@@ -50,49 +50,6 @@ export const generatingSteps: string[] = [
   'Viết nội dung',
   'Kiểm tra citation',
   'Hoàn thiện bài báo',
-]
-
-export const mockPapersRaw: ResearchSourceRaw[] = [
-  { title: 'Retrieval-Augmented Generation: A Comprehensive Survey', authors: 'Lewis, P. et al.', year: 2024, publisher: 'arXiv', type: 'Preprint', doi: '10.48550/arXiv.2312.10997', relevance: 94, citations: 812 },
-  { title: 'Retrieval Augmented Generation for Knowledge-Intensive NLP Tasks', authors: 'Guu, K., Lee, K. et al.', year: 2023, publisher: 'ACM', type: 'Conference Paper', doi: '10.1145/3543872', relevance: 91, citations: 1204 },
-  { title: 'LLM-based Customer Service Automation: A Framework', authors: 'Chen, Y., Park, S.', year: 2025, publisher: 'IEEE', type: 'Journal Article', doi: '10.1109/TSC.2025.331021', relevance: 88, citations: 156 },
-  { title: 'Evaluating Response Quality in RAG-based Chatbots', authors: 'Nguyen, T., Tran, M.', year: 2024, publisher: 'Springer', type: 'Journal Article', doi: '10.1007/s10796-024-10432-1', relevance: 86, citations: 94 },
-  { title: 'Hybrid Retrieval Strategies for Enterprise Support Systems', authors: 'Alvarez, D. et al.', year: 2023, publisher: 'ACL Anthology', type: 'Conference Paper', doi: '10.18653/v1/2023.acl-long.221', relevance: 83, citations: 210 },
-  { title: 'Vector Databases and Semantic Search: A Practical Guide', authors: 'Okafor, C., Wright, B.', year: 2022, publisher: 'arXiv', type: 'Preprint', doi: '10.48550/arXiv.2210.09955', relevance: 79, citations: 341 },
-  { title: 'Customer Experience Impact of Conversational AI in E-commerce', authors: 'Kim, J., Silva, R.', year: 2024, publisher: 'Elsevier', type: 'Journal Article', doi: '10.1016/j.eswa.2024.121897', relevance: 77, citations: 63 },
-  { title: 'Fine-tuning vs. Retrieval Augmentation for Domain Adaptation', authors: 'Popescu, A. et al.', year: 2023, publisher: 'NeurIPS', type: 'Conference Paper', doi: '10.5555/neurips.2023.5521', relevance: 75, citations: 288 },
-  { title: 'Latency and Cost Trade-offs in Production RAG Pipelines', authors: 'Zhang, L., Osei, K.', year: 2025, publisher: 'IEEE', type: 'Journal Article', doi: '10.1109/ACCESS.2025.545011', relevance: 72, citations: 41 },
-  { title: 'A Taxonomy of Grounding Techniques for Large Language Models', authors: 'Fischer, M., Haddad, R.', year: 2022, publisher: 'ACM', type: 'Survey', doi: '10.1145/3555810', relevance: 68, citations: 402 },
-  { title: 'User Trust in AI-Driven Customer Support: An Empirical Study', authors: 'Dubois, E., Kwan, H.', year: 2024, publisher: 'Springer', type: 'Journal Article', doi: '10.1007/s11257-024-09378-2', relevance: 65, citations: 37 },
-  { title: 'Multi-hop Reasoning with Retrieval-Augmented Transformers', authors: 'Rahman, S. et al.', year: 2023, publisher: 'arXiv', type: 'Preprint', doi: '10.48550/arXiv.2305.13412', relevance: 61, citations: 175 },
-]
-
-// p0..p11 khớp id sinh tự động trong useAppController.ts ('p' + index trong mockPapersRaw).
-// 'cites': nguồn mới hơn trích dẫn nguồn nền tảng/cùng-hoặc-trước năm nó.
-// 'related': cùng chủ đề nhưng không có quan hệ trích dẫn trực tiếp.
-export const mockSourceRelations: SourceRelation[] = [
-  { source: 'p0', target: 'p1', kind: 'cites' },
-  { source: 'p0', target: 'p5', kind: 'cites' },
-  { source: 'p0', target: 'p9', kind: 'cites' },
-  { source: 'p0', target: 'p11', kind: 'cites' },
-  { source: 'p1', target: 'p5', kind: 'cites' },
-  { source: 'p1', target: 'p9', kind: 'related' },
-  { source: 'p3', target: 'p1', kind: 'cites' },
-  { source: 'p3', target: 'p0', kind: 'related' },
-  { source: 'p4', target: 'p1', kind: 'cites' },
-  { source: 'p4', target: 'p5', kind: 'cites' },
-  { source: 'p7', target: 'p1', kind: 'cites' },
-  { source: 'p7', target: 'p9', kind: 'related' },
-  { source: 'p11', target: 'p1', kind: 'cites' },
-  { source: 'p11', target: 'p9', kind: 'cites' },
-  { source: 'p2', target: 'p4', kind: 'cites' },
-  { source: 'p2', target: 'p6', kind: 'related' },
-  { source: 'p2', target: 'p10', kind: 'cites' },
-  { source: 'p6', target: 'p4', kind: 'related' },
-  { source: 'p6', target: 'p10', kind: 'related' },
-  { source: 'p10', target: 'p4', kind: 'cites' },
-  { source: 'p8', target: 'p4', kind: 'related' },
-  { source: 'p8', target: 'p0', kind: 'related' },
 ]
 
 export const aiSummaries: string[] = [

@@ -11,7 +11,9 @@ export default function PaperModal() {
     return <Modal open={false} footer={null} onCancel={closePaperModal} destroyOnClose />
   }
 
-  const idx = parseInt(paper.id.replace('p', ''), 10)
+  let hash = 0
+  for (let i = 0; i < paper.id.length; i += 1) hash = (hash * 31 + paper.id.charCodeAt(i)) | 0
+  const idx = Math.abs(hash)
   const summary = aiSummaries[idx % aiSummaries.length]
   const findings = keyFindingsPool[idx % keyFindingsPool.length]
   const methodology = methodologyPool[idx % methodologyPool.length]
@@ -70,9 +72,8 @@ export default function PaperModal() {
         <div className="paper-modal-section">
           <p className="paper-modal-label">Abstract</p>
           <p style={{ fontSize: 13.5, lineHeight: 1.7, fontFamily: "'Source Serif 4', Georgia, serif" }}>
-            Nghiên cứu này khảo sát việc ứng dụng các kỹ thuật truy xuất thông tin kết hợp với mô hình ngôn ngữ lớn
-            nhằm nâng cao chất lượng phản hồi trong các hệ thống hội thoại và hỗ trợ ra quyết định, đồng thời phân
-            tích các thách thức về độ trễ, chi phí và độ tin cậy trong triển khai thực tế.
+            {paper.abstract ||
+              'Bài báo này chưa có abstract công khai trên OpenAlex (thường do nhà xuất bản không cho phép chỉ mục).'}
           </p>
         </div>
 
@@ -134,6 +135,8 @@ export default function PaperModal() {
           {selected ? 'Remove from research' : 'Add to research'}
         </button>
         <button
+          disabled={!paper.doi}
+          onClick={() => paper.doi && window.open(`https://doi.org/${paper.doi}`, '_blank', 'noopener,noreferrer')}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -144,7 +147,8 @@ export default function PaperModal() {
             borderRadius: 9,
             padding: '10px 16px',
             background: 'transparent',
-            cursor: 'pointer',
+            cursor: paper.doi ? 'pointer' : 'not-allowed',
+            opacity: paper.doi ? 1 : 0.5,
           }}
         >
           <ExternalLink size={14} /> Open source

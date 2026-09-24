@@ -1,4 +1,4 @@
-import type { ActiveTab, ChatMessage, ResearchSource, SourceFilter, Stage } from '../../types'
+import type { ActiveTab, ChatMessage, ResearchSource, SourceFilter, SourceRelation, Stage } from '../../types'
 
 export interface AppState {
   stage: Stage
@@ -6,6 +6,7 @@ export interface AppState {
   answers: Record<string, string>
   questionIndex: number
   sources: ResearchSource[]
+  sourceRelations: SourceRelation[]
   selectedIds: Set<string>
   activeTab: ActiveTab
   sourceFilter: SourceFilter
@@ -26,13 +27,14 @@ export const initialState: AppState = {
   answers: {},
   questionIndex: 0,
   sources: [],
+  sourceRelations: [],
   selectedIds: new Set(),
   activeTab: 'research',
   sourceFilter: 'all',
   sourceSearch: '',
   sourceSort: 'relevance',
   sidebarCollapsed: false,
-  sourcesPanelOpen: true,
+  sourcesPanelOpen: false,
   messages: [],
   modalSourceId: null,
   flashSourceId: null,
@@ -49,6 +51,7 @@ export type Action =
   | { type: 'ADVANCE_PROGRESS'; id: string }
   | { type: 'FINISH_PROGRESS'; id: string }
   | { type: 'ADD_SOURCE'; source: ResearchSource }
+  | { type: 'SET_SOURCE_RELATIONS'; relations: SourceRelation[] }
   | { type: 'SET_SOURCE_FILTER'; filter: SourceFilter }
   | { type: 'SET_SOURCE_SEARCH'; value: string }
   | { type: 'SET_SOURCE_SORT'; value: 'relevance' | 'year' | 'citation' }
@@ -58,6 +61,7 @@ export type Action =
   | { type: 'SET_HEADER'; title?: string; subtitle?: string }
   | { type: 'TOGGLE_SIDEBAR_COLLAPSED' }
   | { type: 'TOGGLE_SOURCES_PANEL' }
+  | { type: 'SET_SOURCES_PANEL_OPEN'; open: boolean }
   | { type: 'OPEN_MODAL'; id: string }
   | { type: 'CLOSE_MODAL' }
   | { type: 'FLASH_SOURCE'; id: string | null }
@@ -125,6 +129,8 @@ export function appReducer(state: AppState, action: Action): AppState {
     }
     case 'ADD_SOURCE':
       return { ...state, sources: [...state.sources, action.source] }
+    case 'SET_SOURCE_RELATIONS':
+      return { ...state, sourceRelations: action.relations }
     case 'SET_SOURCE_FILTER':
       return { ...state, sourceFilter: action.filter }
     case 'SET_SOURCE_SEARCH':
@@ -154,6 +160,8 @@ export function appReducer(state: AppState, action: Action): AppState {
       return { ...state, sidebarCollapsed: !state.sidebarCollapsed }
     case 'TOGGLE_SOURCES_PANEL':
       return { ...state, sourcesPanelOpen: !state.sourcesPanelOpen }
+    case 'SET_SOURCES_PANEL_OPEN':
+      return { ...state, sourcesPanelOpen: action.open }
     case 'OPEN_MODAL':
       return { ...state, modalSourceId: action.id }
     case 'CLOSE_MODAL':

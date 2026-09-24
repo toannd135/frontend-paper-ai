@@ -16,7 +16,6 @@ import {
   Share2,
 } from 'lucide-react'
 import { useApp } from '../../state/AppContext'
-import { mockSourceRelations } from '../../../data/mock'
 import { buildGraph3DElements, truncateLabel, nodeValue, type GraphTheme, type Graph3DNode, type Graph3DLink } from './graphData'
 import type { SourceFilter } from '../../../types'
 
@@ -59,8 +58,8 @@ export default function GraphView() {
   )
 
   const relatedRelations = useMemo(
-    () => mockSourceRelations.filter((r) => r.source === selectedId || r.target === selectedId),
-    [selectedId],
+    () => state.sourceRelations.filter((r) => r.source === selectedId || r.target === selectedId),
+    [state.sourceRelations, selectedId],
   )
 
   const excludedIds = useMemo(() => {
@@ -84,12 +83,12 @@ export default function GraphView() {
     () =>
       buildGraph3DElements({
         sources: state.sources,
-        relations: mockSourceRelations,
+        relations: state.sourceRelations,
         theme,
         selectedId,
         excludedIds,
       }),
-    [state.sources, theme, selectedId, excludedIds],
+    [state.sources, state.sourceRelations, theme, selectedId, excludedIds],
   )
 
   // Create the 3D engine once. Drag-to-rotate/orbit and scroll-to-zoom come for

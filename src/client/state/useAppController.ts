@@ -1,11 +1,11 @@
 import { useCallback, useReducer, useRef } from 'react'
-import type { ActiveTab, ChatMessage, ResearchSource, SourceFilter } from '../../types'
+import type { ActiveTab, ChatMessage, SourceFilter } from '../../types'
 import {
   generatingSteps,
-  mockPapersRaw,
   questions,
   researchingSteps,
 } from '../../data/mock'
+import { searchSources, SourceSearchError } from '../api/sources'
 import { appReducer, initialState } from './appReducer'
 
 let counter = 0
@@ -50,21 +50,29 @@ export function useAppController() {
     }, 650)
   }, [])
 
-  const populateSourcesProgressively = useCallback(() => {
-    const list: ResearchSource[] = mockPapersRaw.map((p, idx) => ({
-      id: 'p' + idx,
-      ...p,
-      status: 'found',
-    }))
-    let i = 0
-    const addOne = () => {
-      if (i >= list.length) return
-      dispatch({ type: 'ADD_SOURCE', source: list[i] })
-      i += 1
-      setTimeout(addOne, 260)
+  const populateSourcesProgressively = useCallback(async () => {
+    const topic = stateRef.current.topic
+    try {
+      const { sources, relations } = await searchSources(topic)
+      dispatch({ type: 'SET_SOURCE_RELATIONS', relations })
+      // Với ít nguồn, giữ hiệu ứng "xuất hiện từng cái" như cũ (260ms/nguồn) cho mượt.
+      // Với nhiều nguồn (vài trăm), gộp thành lô, mỗi lô cách nhau 200ms, để tổng thời
+      // gian hiển thị không phụ thuộc tuyến tính vào số lượng (khoảng 8s dù có bao nhiêu).
+      const batchSize = Math.max(1, Math.ceil(sources.length / 40))
+      const tickDelay = batchSize === 1 ? 260 : 200
+      let i = 0
+      const addBatch = () => {
+        if (i >= sources.length) return
+        sources.slice(i, i + batchSize).forEach((source) => dispatch({ type: 'ADD_SOURCE', source }))
+        i += batchSize
+        setTimeout(addBatch, tickDelay)
+      }
+      addBatch()
+    } catch (err) {
+      const message = err instanceof SourceSearchError ? err.message : 'Không tìm được nguồn từ OpenAlex.'
+      appendAiTypingThenText(`⚠ ${message}`)
     }
-    addOne()
-  }, [])
+  }, [appendAiTypingThenText])
 
   const onArticleReady = useCallback(() => {
     dispatch({ type: 'SET_STAGE', stage: 'article' })
@@ -94,7 +102,7 @@ export function useAppController() {
         }
         dispatch({ type: 'ADVANCE_PROGRESS', id: progressId })
         if (populateSourcesMidway && i === 2) {
-          populateSourcesProgressively()
+          void populateSourcesProgressively()
         }
         i += 1
         setTimeout(next, 900 + Math.random() * 500)
@@ -146,6 +154,7 @@ export function useAppController() {
   const beginResearch = useCallback(
     (specMsgId: string) => {
       dispatch({ type: 'SET_STAGE', stage: 'researching' })
+      dispatch({ type: 'SET_SOURCES_PANEL_OPEN', open: true })
       dispatch({ type: 'SET_HEADER', subtitle: 'Đang nghiên cứu chủ đề...' })
       dispatch({ type: 'ADD_MESSAGE', message: { kind: 'ai-text', id: uid('ai'), text: 'Đang nghiên cứu chủ đề của bạn...' } })
       const progressId = uid('progress')

@@ -31,6 +31,7 @@ export interface ResearchSourceRaw {
   doi: string
   relevance: number
   citations: number
+  abstract?: string | null
 }
 
 export interface ResearchSource extends ResearchSourceRaw {
