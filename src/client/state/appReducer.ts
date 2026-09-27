@@ -1,10 +1,25 @@
-import type { ActiveTab, ChatMessage, ResearchSource, SourceFilter, SourceRelation, Stage } from '../../types'
+import type {
+  ActiveTab,
+  ChatMessage,
+  Citation,
+  PaperStatus,
+  ResearchSource,
+  SourceFilter,
+  SourceRelation,
+  Stage,
+} from '../../types'
 
 export interface AppState {
   stage: Stage
   topic: string
-  answers: Record<string, string>
-  questionIndex: number
+  clarificationQuestions: string[]
+  clarificationIndex: number
+  clarificationAnswers: Record<string, string>
+  researchTaskId: string | null
+  report: string | null
+  citations: Citation[]
+  conversationId: string | null
+  paperId: string | null
   sources: ResearchSource[]
   sourceRelations: SourceRelation[]
   selectedIds: Set<string>
@@ -24,8 +39,14 @@ export interface AppState {
 export const initialState: AppState = {
   stage: 'initial',
   topic: '',
-  answers: {},
-  questionIndex: 0,
+  clarificationQuestions: [],
+  clarificationIndex: 0,
+  clarificationAnswers: {},
+  researchTaskId: null,
+  report: null,
+  citations: [],
+  conversationId: null,
+  paperId: null,
   sources: [],
   sourceRelations: [],
   selectedIds: new Set(),
@@ -44,9 +65,16 @@ export const initialState: AppState = {
 
 export type Action =
   | { type: 'START_TOPIC'; topic: string; userMsgId: string; typingId: string }
-  | { type: 'REPLACE_TYPING'; id: string; text: string }
+  | { type: 'REPLACE_TYPING'; id: string; text: string; citations?: Citation[] }
   | { type: 'ADD_MESSAGE'; message: ChatMessage }
-  | { type: 'ANSWER_QUESTION'; cardId: string; questionId: string; selectedIndex: number; value: string; userMsgId: string }
+  | { type: 'SET_CLARIFICATION_QUESTIONS'; questions: string[] }
+  | { type: 'ANSWER_CLARIFY'; cardId: string; value: string; userMsgId: string }
+  | { type: 'SET_RESEARCH_TASK'; id: string }
+  | { type: 'SET_RESEARCH_RESULT'; report: string; citations: Citation[] }
+  | { type: 'SET_RESEARCH_ERROR' }
+  | { type: 'SET_CONVERSATION_ID'; id: string }
+  | { type: 'SET_PAPER_ID'; id: string | null }
+  | { type: 'UPDATE_PAPER_UPLOAD'; id: string; status: PaperStatus; error: string | null }
   | { type: 'SET_STAGE'; stage: Stage }
   | { type: 'ADVANCE_PROGRESS'; id: string }
   | { type: 'FINISH_PROGRESS'; id: string }
@@ -85,23 +113,45 @@ export function appReducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         messages: state.messages.map((m) =>
-          m.id === action.id ? ({ kind: 'ai-text', id: action.id, text: action.text } satisfies ChatMessage) : m,
+          m.id === action.id
+            ? ({ kind: 'ai-text', id: action.id, text: action.text, citations: action.citations } satisfies ChatMessage)
+            : m,
         ),
       }
     }
     case 'ADD_MESSAGE':
       return { ...state, messages: [...state.messages, action.message] }
-    case 'ANSWER_QUESTION': {
+    case 'SET_CLARIFICATION_QUESTIONS':
+      return { ...state, clarificationQuestions: action.questions, clarificationIndex: 0 }
+    case 'ANSWER_CLARIFY': {
+      const target = state.messages.find((m) => m.kind === 'clarify' && m.id === action.cardId)
+      const prompt = target && target.kind === 'clarify' ? target.prompt : ''
       const messages = state.messages.map((m) =>
-        m.kind === 'question' && m.id === action.cardId
-          ? { ...m, answered: true, selectedIndex: action.selectedIndex }
-          : m,
+        m.kind === 'clarify' && m.id === action.cardId ? { ...m, answered: true, value: action.value } : m,
       )
       return {
         ...state,
-        answers: { ...state.answers, [action.questionId]: action.value },
-        questionIndex: state.questionIndex + 1,
+        clarificationAnswers: { ...state.clarificationAnswers, [prompt]: action.value },
+        clarificationIndex: state.clarificationIndex + 1,
         messages: [...messages, { kind: 'user', id: action.userMsgId, text: action.value }],
+      }
+    }
+    case 'SET_RESEARCH_TASK':
+      return { ...state, researchTaskId: action.id }
+    case 'SET_RESEARCH_RESULT':
+      return { ...state, report: action.report, citations: action.citations }
+    case 'SET_RESEARCH_ERROR':
+      return { ...state, researchTaskId: null }
+    case 'SET_CONVERSATION_ID':
+      return { ...state, conversationId: action.id }
+    case 'SET_PAPER_ID':
+      return { ...state, paperId: action.id }
+    case 'UPDATE_PAPER_UPLOAD': {
+      return {
+        ...state,
+        messages: state.messages.map((m) =>
+          m.kind === 'paper-upload' && m.id === action.id ? { ...m, status: action.status, error: action.error } : m,
+        ),
       }
     }
     case 'SET_STAGE':
@@ -111,7 +161,7 @@ export function appReducer(state: AppState, action: Action): AppState {
         ...state,
         messages: state.messages.map((m) => {
           if (m.kind !== 'progress' || m.id !== action.id) return m
-          const activeIndex = m.activeIndex + 1
+          const activeIndex = Math.min(m.activeIndex + 1, m.steps.length - 1)
           const doneCount = m.activeIndex >= 0 ? m.activeIndex + 1 : 0
           return { ...m, activeIndex, doneCount }
         }),

@@ -1,16 +1,25 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { Paperclip, ArrowUp, Sparkles } from 'lucide-react'
+import { Paperclip, ArrowUp, Sparkles, FileText, Loader2, Check, X } from 'lucide-react'
 import { useApp } from '../../state/AppContext'
 import UserBubble from './UserBubble'
 import { AiText, AiTyping } from './AiBubble'
-import QuestionCard from './QuestionCard'
+import ClarifyCard from './ClarifyCard'
 import SpecificationCard from './SpecificationCard'
 import ProgressCard from './ProgressCard'
 
 export default function ChatView() {
-  const { state, chatMessages, selectOption, beginResearchFromSpec, beginArticleFromButton, sendChatMessage } =
-    useApp()
+  const {
+    state,
+    chatMessages,
+    clarificationAnswerList,
+    answerClarify,
+    beginResearchFromSpec,
+    beginArticleFromButton,
+    sendChatMessage,
+    uploadPaperFile,
+  } = useApp()
   const scrollRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [input, setInput] = useState('')
 
   useEffect(() => {
@@ -34,6 +43,13 @@ export default function ChatView() {
     }
   }
 
+  const onAttachClick = () => fileInputRef.current?.click()
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) uploadPaperFile(file)
+    e.target.value = ''
+  }
+
   const specStarted = state.stage !== 'specification'
 
   return (
@@ -46,16 +62,15 @@ export default function ChatView() {
             case 'ai-typing':
               return <AiTyping key={m.id} />
             case 'ai-text':
-              return <AiText key={m.id} text={m.text} />
-            case 'question':
+              return <AiText key={m.id} text={m.text} citations={m.citations} />
+            case 'clarify':
               return (
-                <QuestionCard
+                <ClarifyCard
                   key={m.id}
                   prompt={m.prompt}
-                  options={m.options}
                   answered={m.answered}
-                  selectedIndex={m.selectedIndex}
-                  onSelect={(idx) => selectOption(m.id, m.questionId, idx)}
+                  value={m.value}
+                  onSubmit={(value) => answerClarify(m.id, value)}
                 />
               )
             case 'specification':
@@ -63,11 +78,9 @@ export default function ChatView() {
                 <SpecificationCard
                   key={m.id}
                   topic={state.topic}
-                  focus={state.answers.focus}
-                  years={state.answers.years}
-                  length={state.answers.length}
+                  answers={clarificationAnswerList}
                   started={specStarted}
-                  onBegin={() => beginResearchFromSpec(m.id)}
+                  onBegin={() => beginResearchFromSpec()}
                 />
               )
             case 'progress':
@@ -79,6 +92,21 @@ export default function ChatView() {
                   doneCount={m.doneCount}
                   finished={m.finished}
                 />
+              )
+            case 'paper-upload':
+              return (
+                <div className="chat-row ai animate-fade-up" key={m.id}>
+                  <div className="chat-avatar-spacer" />
+                  <div className="bubble ai" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    <FileText size={14} />
+                    <span>{m.filename}</span>
+                    {(m.status === 'pending' || m.status === 'processing') && (
+                      <Loader2 size={14} className="spin" />
+                    )}
+                    {m.status === 'done' && <Check size={14} color="var(--color-primary)" />}
+                    {m.status === 'failed' && <X size={14} color="#c0392b" />}
+                  </div>
+                </div>
               )
             case 'generate-button':
               return (
@@ -120,7 +148,14 @@ export default function ChatView() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
           />
-          <button className="icon-btn" type="button" aria-label="Đính kèm tệp">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf"
+            style={{ display: 'none' }}
+            onChange={onFileChange}
+          />
+          <button className="icon-btn" type="button" aria-label="Đính kèm tệp PDF" onClick={onAttachClick}>
             <Paperclip size={16} />
           </button>
           <button className="round-send-btn" style={{ width: 32, height: 32 }} onClick={send} type="button">

@@ -1,4 +1,6 @@
 import logo from '../../../assets/logo.png'
+import type { Citation } from '../../../types'
+import { renderCitedText } from '../../lib/reportText'
 
 export function AiAvatar() {
   return (
@@ -23,11 +25,11 @@ export function AiTyping() {
   )
 }
 
-export function AiText({ text }: { text: string }) {
+export function AiText({ text, citations }: { text: string; citations?: Citation[] }) {
   return (
     <div className="chat-row ai animate-fade-up">
       <AiAvatar />
-      <div className="bubble ai">{text}</div>
+      <div className="bubble ai">{citations && citations.length > 0 ? renderCitedText(text, citations) : text}</div>
     </div>
   )
 }

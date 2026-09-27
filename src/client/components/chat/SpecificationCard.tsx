@@ -1,15 +1,14 @@
 import { ClipboardList, Search } from 'lucide-react'
+import type { ClarificationAnswer } from '../../../types'
 
 interface SpecificationCardProps {
   topic: string
-  focus?: string
-  years?: string
-  length?: string
+  answers: ClarificationAnswer[]
   onBegin: () => void
   started: boolean
 }
 
-export default function SpecificationCard({ topic, focus, years, length, onBegin, started }: SpecificationCardProps) {
+export default function SpecificationCard({ topic, answers, onBegin, started }: SpecificationCardProps) {
   return (
     <div className="chat-row ai animate-fade-up">
       <div className="chat-avatar-spacer" />
@@ -25,22 +24,19 @@ export default function SpecificationCard({ topic, focus, years, length, onBegin
               {topic}
             </p>
           </div>
-          <div>
-            <p className="spec-label">Focus</p>
-            <p className="spec-value">{focus}</p>
-          </div>
-          <div>
-            <p className="spec-label">Publication years</p>
-            <p className="spec-value">{years === 'Tất cả' ? '2022 – 2026' : years}</p>
-          </div>
-          <div>
-            <p className="spec-label">Article length</p>
-            <p className="spec-value">{length}</p>
-          </div>
-          <div>
-            <p className="spec-label">Sources</p>
-            <p className="spec-value">Academic papers</p>
-          </div>
+          {answers.length === 0 ? (
+            <div>
+              <p className="spec-label">Ghi chú</p>
+              <p className="spec-value">Không cần làm rõ thêm — hệ thống đã đủ thông tin để nghiên cứu.</p>
+            </div>
+          ) : (
+            answers.map((a) => (
+              <div key={a.question}>
+                <p className="spec-label">{a.question}</p>
+                <p className="spec-value">{a.answer}</p>
+              </div>
+            ))
+          )}
         </div>
         <div className="spec-card-footer">
           <button

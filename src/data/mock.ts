@@ -1,4 +1,4 @@
-import type { Conversation, ResearchQuestion } from '../types'
+import type { Conversation } from '../types'
 
 export const mockConversations: Record<string, Conversation[]> = {
   'Hôm nay': [
@@ -15,24 +15,6 @@ export const mockConversations: Record<string, Conversation[]> = {
     { id: 'c7', title: 'AI Agent tự động hoá' },
   ],
 }
-
-export const questions: ResearchQuestion[] = [
-  {
-    id: 'focus',
-    prompt: 'Bạn muốn bài báo tập trung vào khía cạnh nào?',
-    options: ['Kiến trúc hệ thống', 'Đánh giá hiệu năng', 'So sánh RAG và LLM', 'Ứng dụng thực tế'],
-  },
-  {
-    id: 'years',
-    prompt: 'Bạn muốn sử dụng tài liệu trong khoảng thời gian nào?',
-    options: ['Tất cả', '2022', '2023', '2024', '2025', '2026'],
-  },
-  {
-    id: 'length',
-    prompt: 'Bạn muốn bài báo dài khoảng bao nhiêu?',
-    options: ['5 trang', '10 trang', '15 trang', '20+ trang'],
-  },
-]
 
 export const researchingSteps: string[] = [
   'Phân tích chủ đề',

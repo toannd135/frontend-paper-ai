@@ -16,12 +16,6 @@ export interface Conversation {
   title: string
 }
 
-export interface ResearchQuestion {
-  id: string
-  prompt: string
-  options: string[]
-}
-
 export interface ResearchSourceRaw {
   title: string
   authors: string
@@ -47,18 +41,32 @@ export interface SourceRelation {
   kind: SourceRelationKind
 }
 
+export type ResearchStatus = 'pending' | 'processing' | 'done' | 'failed'
+export type PaperStatus = 'pending' | 'processing' | 'done' | 'failed'
+
+export interface Citation {
+  paperId: string
+  chunkId: string
+  page: number | null
+  section: string | null
+  textSnippet: string
+}
+
+export interface ClarificationAnswer {
+  question: string
+  answer: string
+}
+
 export type ChatMessage =
   | { kind: 'user'; id: string; text: string }
   | { kind: 'ai-typing'; id: string }
-  | { kind: 'ai-text'; id: string; text: string }
+  | { kind: 'ai-text'; id: string; text: string; citations?: Citation[] }
   | {
-      kind: 'question'
+      kind: 'clarify'
       id: string
-      questionId: string
       prompt: string
-      options: string[]
       answered: boolean
-      selectedIndex: number | null
+      value: string
     }
   | { kind: 'specification'; id: string }
   | {
@@ -71,3 +79,4 @@ export type ChatMessage =
       finished: boolean
     }
   | { kind: 'generate-button'; id: string; clicked: boolean }
+  | { kind: 'paper-upload'; id: string; filename: string; status: PaperStatus; error: string | null }
