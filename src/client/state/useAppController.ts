@@ -185,11 +185,18 @@ export function useAppController() {
   }, [pollResearchTask, populateSourcesProgressively])
 
   const askClarify = useCallback((index: number) => {
-    const prompt = stateRef.current.clarificationQuestions[index]
-    if (!prompt) return
+    const question = stateRef.current.clarificationQuestions[index]
+    if (!question) return
     dispatch({
       type: 'ADD_MESSAGE',
-      message: { kind: 'clarify', id: uid('clarify'), prompt, answered: false, value: '' },
+      message: {
+        kind: 'clarify',
+        id: uid('clarify'),
+        prompt: question.text,
+        suggestions: question.suggestions,
+        answered: false,
+        value: '',
+      },
     })
   }, [])
 
@@ -263,7 +270,7 @@ export function useAppController() {
   )
 
   const sendChatMessage = useCallback(
-    (text: string) => {
+    (text: string, model?: string) => {
       const trimmed = text.trim()
       if (!trimmed) return
       dispatch({ type: 'ADD_MESSAGE', message: { kind: 'user', id: uid('u'), text: trimmed } })
@@ -274,6 +281,7 @@ export function useAppController() {
           const result = await sendChat(trimmed, {
             paperId: stateRef.current.paperId,
             conversationId: stateRef.current.conversationId,
+            model,
           })
           dispatch({ type: 'SET_CONVERSATION_ID', id: result.conversationId })
           dispatch({ type: 'REPLACE_TYPING', id, text: result.answer, citations: result.citations })
@@ -378,8 +386,8 @@ export function useAppController() {
   const chatMessages: ChatMessage[] = state.messages
 
   const clarificationAnswerList: ClarificationAnswer[] = state.clarificationQuestions.map((q) => ({
-    question: q,
-    answer: state.clarificationAnswers[q] ?? '',
+    question: q.text,
+    answer: state.clarificationAnswers[q.text] ?? '',
   }))
 
   return {

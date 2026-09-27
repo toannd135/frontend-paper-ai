@@ -1,4 +1,4 @@
-import type { Citation, ResearchStatus } from '../../types'
+import type { ClarificationQuestionSpec, Citation, ResearchStatus } from '../../types'
 
 interface ApiCitation {
   paper_id: string
@@ -8,9 +8,14 @@ interface ApiCitation {
   text_snippet: string
 }
 
+interface ApiClarificationQuestion {
+  text: string
+  suggestions: string[]
+}
+
 interface ApiResearchClarification {
   status: 'needs_clarification'
-  questions: string[]
+  questions: ApiClarificationQuestion[]
 }
 
 interface ApiResearchTask {
@@ -23,7 +28,7 @@ interface ApiResearchTask {
 }
 
 export type CreateResearchResult =
-  | { kind: 'clarification'; questions: string[] }
+  | { kind: 'clarification'; questions: ClarificationQuestionSpec[] }
   | { kind: 'task'; task: ResearchTask }
 
 export interface ResearchTask {

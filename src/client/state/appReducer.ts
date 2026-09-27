@@ -2,6 +2,7 @@ import type {
   ActiveTab,
   ChatMessage,
   Citation,
+  ClarificationQuestionSpec,
   PaperStatus,
   ResearchSource,
   SourceFilter,
@@ -12,7 +13,7 @@ import type {
 export interface AppState {
   stage: Stage
   topic: string
-  clarificationQuestions: string[]
+  clarificationQuestions: ClarificationQuestionSpec[]
   clarificationIndex: number
   clarificationAnswers: Record<string, string>
   researchTaskId: string | null
@@ -67,7 +68,7 @@ export type Action =
   | { type: 'START_TOPIC'; topic: string; userMsgId: string; typingId: string }
   | { type: 'REPLACE_TYPING'; id: string; text: string; citations?: Citation[] }
   | { type: 'ADD_MESSAGE'; message: ChatMessage }
-  | { type: 'SET_CLARIFICATION_QUESTIONS'; questions: string[] }
+  | { type: 'SET_CLARIFICATION_QUESTIONS'; questions: ClarificationQuestionSpec[] }
   | { type: 'ANSWER_CLARIFY'; cardId: string; value: string; userMsgId: string }
   | { type: 'SET_RESEARCH_TASK'; id: string }
   | { type: 'SET_RESEARCH_RESULT'; report: string; citations: Citation[] }

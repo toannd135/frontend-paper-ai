@@ -4,23 +4,25 @@ import { AiAvatar } from './AiBubble'
 
 interface ClarifyCardProps {
   prompt: string
+  suggestions: string[]
   answered: boolean
   value: string
   onSubmit: (value: string) => void
 }
 
-export default function ClarifyCard({ prompt, answered, value, onSubmit }: ClarifyCardProps) {
+export default function ClarifyCard({ prompt, suggestions, answered, value, onSubmit }: ClarifyCardProps) {
   const [draft, setDraft] = useState('')
+  const [showFreeText, setShowFreeText] = useState(suggestions.length === 0)
 
-  const submit = () => {
-    if (!draft.trim()) return
-    onSubmit(draft.trim())
+  const submit = (text: string) => {
+    if (!text.trim()) return
+    onSubmit(text.trim())
   }
 
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault()
-      submit()
+      submit(draft)
     }
   }
 
@@ -36,26 +38,49 @@ export default function ClarifyCard({ prompt, answered, value, onSubmit }: Clari
             <span>{value}</span>
           </div>
         ) : (
-          <div className="chat-input-card" style={{ maxWidth: 420 }}>
-            <input
-              type="text"
-              placeholder="Nhập câu trả lời..."
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={onKeyDown}
-              style={{
-                flex: 1,
-                border: 0,
-                outline: 'none',
-                background: 'transparent',
-                fontSize: 13.5,
-                padding: '6px 4px',
-              }}
-            />
-            <button className="round-send-btn" style={{ width: 32, height: 32 }} onClick={submit} type="button">
-              <ArrowUp size={16} />
-            </button>
-          </div>
+          <>
+            {suggestions.length > 0 && (
+              <div className="option-group" style={{ maxWidth: 420, marginBottom: showFreeText ? 8 : 0 }}>
+                {suggestions.map((s) => (
+                  <button key={s} type="button" className="option-btn" onClick={() => submit(s)}>
+                    <span>{s}</span>
+                  </button>
+                ))}
+                {!showFreeText && (
+                  <button type="button" className="option-btn" onClick={() => setShowFreeText(true)}>
+                    <span>Khác...</span>
+                  </button>
+                )}
+              </div>
+            )}
+            {showFreeText && (
+              <div className="chat-input-card" style={{ maxWidth: 420 }}>
+                <input
+                  type="text"
+                  placeholder="Nhập câu trả lời..."
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={onKeyDown}
+                  style={{
+                    flex: 1,
+                    border: 0,
+                    outline: 'none',
+                    background: 'transparent',
+                    fontSize: 13.5,
+                    padding: '6px 4px',
+                  }}
+                />
+                <button
+                  className="round-send-btn"
+                  style={{ width: 32, height: 32 }}
+                  onClick={() => submit(draft)}
+                  type="button"
+                >
+                  <ArrowUp size={16} />
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

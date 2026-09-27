@@ -57,6 +57,11 @@ export interface ClarificationAnswer {
   answer: string
 }
 
+export interface ClarificationQuestionSpec {
+  text: string
+  suggestions: string[]
+}
+
 export type ChatMessage =
   | { kind: 'user'; id: string; text: string }
   | { kind: 'ai-typing'; id: string }
@@ -65,6 +70,7 @@ export type ChatMessage =
       kind: 'clarify'
       id: string
       prompt: string
+      suggestions: string[]
       answered: boolean
       value: string
     }
