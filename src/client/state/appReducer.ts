@@ -100,14 +100,13 @@ export function appReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'START_TOPIC': {
       const userMsg: ChatMessage = { kind: 'user', id: action.userMsgId, text: action.topic }
-      const typingMsg: ChatMessage = { kind: 'ai-typing', id: action.typingId }
       return {
         ...state,
         topic: action.topic,
         stage: 'questions',
         headerTitle: action.topic.length > 56 ? action.topic.slice(0, 55) + '…' : action.topic,
         headerSubtitle: 'Đang làm rõ yêu cầu nghiên cứu',
-        messages: [...state.messages, userMsg, typingMsg],
+        messages: [...state.messages, userMsg],
       }
     }
     case 'REPLACE_TYPING': {
@@ -163,7 +162,8 @@ export function appReducer(state: AppState, action: Action): AppState {
         messages: state.messages.map((m) => {
           if (m.kind !== 'progress' || m.id !== action.id) return m
           const activeIndex = Math.min(m.activeIndex + 1, m.steps.length - 1)
-          const doneCount = m.activeIndex >= 0 ? m.activeIndex + 1 : 0
+          // Bước cuối chỉ được tick khi FINISH_PROGRESS, tránh hiện "xong hết" trong lúc vẫn đang poll.
+          const doneCount = Math.min(m.activeIndex >= 0 ? m.activeIndex + 1 : 0, m.steps.length - 1)
           return { ...m, activeIndex, doneCount }
         }),
       }

@@ -18,7 +18,7 @@ import { useApp } from '../../state/AppContext'
 import ArticleContent from './ArticleContent'
 
 export default function ArticleView() {
-  const { setActiveTab } = useApp()
+  const { state, setActiveTab } = useApp()
   const [saved, setSaved] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const [toolbar, setToolbar] = useState<{ top: number; left: number } | null>(null)
@@ -57,7 +57,11 @@ export default function ArticleView() {
         <button className="toolbar-btn primary" onClick={save}>
           {saved ? <Check size={14} /> : <Save size={14} />} {saved ? 'Saved' : 'Save'}
         </button>
-        <button className="toolbar-btn">
+        <button
+          className="toolbar-btn"
+          disabled={!state.researchTaskId}
+          onClick={() => window.open(`/api/research/${state.researchTaskId}/pdf`, '_blank', 'noopener')}
+        >
           <FileDown size={14} /> Export PDF
         </button>
         <button className="toolbar-btn">

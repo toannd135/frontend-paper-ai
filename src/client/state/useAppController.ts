@@ -14,6 +14,7 @@ function uid(prefix: string) {
 }
 
 const RESEARCH_POLL_MS = 1800
+const TOP_SOURCES = 20
 const PAPER_POLL_MS = 1500
 
 export function useAppController() {
@@ -34,7 +35,11 @@ export function useAppController() {
   const populateSourcesProgressively = useCallback(async () => {
     const topic = stateRef.current.topic
     try {
-      const { sources, relations } = await searchSources(topic)
+      const found = await searchSources(topic)
+      // Chỉ hiển thị TOP_SOURCES bài liên quan nhất; người dùng không cần tự chọn.
+      const sources = [...found.sources].sort((a, b) => b.relevance - a.relevance).slice(0, TOP_SOURCES)
+      const ids = new Set(sources.map((s) => s.id))
+      const relations = found.relations.filter((r) => ids.has(r.source) && ids.has(r.target))
       dispatch({ type: 'SET_SOURCE_RELATIONS', relations })
       // Với ít nguồn, giữ hiệu ứng "xuất hiện từng cái" như cũ (260ms/nguồn) cho mượt.
       // Với nhiều nguồn (vài trăm), gộp thành lô, mỗi lô cách nhau 200ms, để tổng thời
@@ -92,8 +97,7 @@ export function useAppController() {
     const sources = stateRef.current.sources
     const citationCount = stateRef.current.citations.length
     dispatch({ type: 'SET_HEADER', subtitle: `${sources.length} nguồn tham khảo đã tìm thấy` })
-    const top8 = [...sources].sort((a, b) => b.relevance - a.relevance).slice(0, 8)
-    dispatch({ type: 'AUTO_SELECT', ids: top8.map((p) => p.id) })
+    dispatch({ type: 'AUTO_SELECT', ids: sources.map((p) => p.id) })
 
     appendAiTypingThenText(
       citationCount > 0

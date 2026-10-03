@@ -4,7 +4,7 @@ import { useApp } from '../state/AppContext'
 import { aiSummaries, keyFindingsPool, limitationsPool, methodologyPool } from '../../data/mock'
 
 export default function PaperModal() {
-  const { state, closePaperModal, toggleSelectSource } = useApp()
+  const { state, closePaperModal } = useApp()
   const paper = state.sources.find((s) => s.id === state.modalSourceId) || null
 
   if (!paper) {
@@ -18,7 +18,6 @@ export default function PaperModal() {
   const findings = keyFindingsPool[idx % keyFindingsPool.length]
   const methodology = methodologyPool[idx % methodologyPool.length]
   const limitation = limitationsPool[idx % limitationsPool.length]
-  const selected = state.selectedIds.has(paper.id)
 
   return (
     <Modal
@@ -115,25 +114,6 @@ export default function PaperModal() {
           gap: 10,
         }}
       >
-        <button
-          onClick={() => {
-            toggleSelectSource(paper.id)
-            closePaperModal()
-          }}
-          style={{
-            flex: 1,
-            fontSize: 13,
-            fontWeight: 600,
-            borderRadius: 9,
-            padding: '10px',
-            border: selected ? '1px solid rgba(8,127,115,0.3)' : 0,
-            background: selected ? 'rgba(8,127,115,0.1)' : 'var(--color-gold)',
-            color: selected ? 'var(--color-primary)' : '#fff',
-            cursor: 'pointer',
-          }}
-        >
-          {selected ? 'Remove from research' : 'Add to research'}
-        </button>
         <button
           disabled={!paper.doi}
           onClick={() => paper.doi && window.open(`https://doi.org/${paper.doi}`, '_blank', 'noopener,noreferrer')}

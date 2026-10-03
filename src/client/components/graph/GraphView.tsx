@@ -21,7 +21,6 @@ import type { SourceFilter } from '../../../types'
 
 const GLOBAL_FILTERS: { key: SourceFilter; label: string }[] = [
   { key: 'all', label: 'All' },
-  { key: 'selected', label: 'Selected' },
   { key: 'high', label: 'High relevance' },
   { key: 'recent', label: 'Recent' },
 ]
@@ -30,7 +29,7 @@ const BG_LIGHT = '#fff8e8'
 const BG_DARK = '#12211f'
 
 export default function GraphView() {
-  const { state, setSourceSearch, setSourceFilter, toggleSelectSource, openPaperModal } = useApp()
+  const { state, setSourceSearch, setSourceFilter, openPaperModal } = useApp()
 
   const [theme, setTheme] = useState<GraphTheme>('light')
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -68,7 +67,6 @@ export default function GraphView() {
     state.sources.forEach((s) => {
       let ok = true
       if (q && !s.title.toLowerCase().includes(q) && !s.authors.toLowerCase().includes(q)) ok = false
-      if (state.sourceFilter === 'selected' && !state.selectedIds.has(s.id)) ok = false
       if (state.sourceFilter === 'high' && s.relevance < 85) ok = false
       if (state.sourceFilter === 'recent' && s.year < 2024) ok = false
       if (typeFilter.size > 0 && !typeFilter.has(s.type)) ok = false
@@ -77,7 +75,7 @@ export default function GraphView() {
       if (!ok) excluded.add(s.id)
     })
     return excluded
-  }, [state.sources, state.sourceSearch, state.sourceFilter, state.selectedIds, typeFilter, yearFilter, minRelevance])
+  }, [state.sources, state.sourceSearch, state.sourceFilter, typeFilter, yearFilter, minRelevance])
 
   const graphData = useMemo(
     () =>
@@ -412,12 +410,6 @@ export default function GraphView() {
             </div>
 
             <div className="graph-detail-actions">
-              <button
-                className={`toolbar-btn${state.selectedIds.has(selectedSource.id) ? '' : ' primary'}`}
-                onClick={() => toggleSelectSource(selectedSource.id)}
-              >
-                {state.selectedIds.has(selectedSource.id) ? 'Bỏ khỏi nghiên cứu' : 'Thêm vào nghiên cứu'}
-              </button>
               <button className="toolbar-btn link" onClick={() => openPaperModal(selectedSource.id)}>
                 <ExternalLink size={14} /> Xem chi tiết
               </button>
