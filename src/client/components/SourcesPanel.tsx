@@ -5,7 +5,6 @@ import type { SourceFilter } from '../../types'
 
 const FILTERS: { key: SourceFilter; label: string }[] = [
   { key: 'all', label: 'All' },
-  { key: 'selected', label: 'Selected' },
   { key: 'high', label: 'High relevance' },
   { key: 'recent', label: 'Recent' },
 ]
@@ -21,7 +20,6 @@ export default function SourcesPanel({ mobileOpen, onCloseDrawer }: SourcesPanel
     setSourceFilter,
     setSourceSearch,
     setSourceSort,
-    toggleSelectSource,
     openPaperModal,
     toggleSourcesPanel,
   } = useApp()
@@ -33,7 +31,6 @@ export default function SourcesPanel({ mobileOpen, onCloseDrawer }: SourcesPanel
       (p) => p.title.toLowerCase().includes(q) || p.authors.toLowerCase().includes(q),
     )
   }
-  if (state.sourceFilter === 'selected') items = items.filter((p) => state.selectedIds.has(p.id))
   if (state.sourceFilter === 'high') items = items.filter((p) => p.relevance >= 85)
   if (state.sourceFilter === 'recent') items = items.filter((p) => p.year >= 2024)
 
@@ -126,10 +123,8 @@ export default function SourcesPanel({ mobileOpen, onCloseDrawer }: SourcesPanel
             <SourceCard
               key={p.id}
               paper={p}
-              selected={state.selectedIds.has(p.id)}
               flash={state.flashSourceId === p.id}
               onView={() => openPaperModal(p.id)}
-              onToggleSelect={() => toggleSelectSource(p.id)}
             />
           ))
         )}
