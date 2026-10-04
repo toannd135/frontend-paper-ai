@@ -1,17 +1,12 @@
 import type { PaperStatus } from '../../types'
+import { ApiError, apiFetch, toQuery } from './http'
 
-interface ApiPaperUploadResponse {
+interface ApiPaper {
   id: string
   filename: string
   status: PaperStatus
-}
-
-interface ApiPaperStatusResponse {
-  id: string
-  filename: string
-  status: PaperStatus
-  error: string | null
-  created_at: string
+  error?: string | null
+  created_at?: string
 }
 
 export interface PaperInfo {
@@ -19,48 +14,41 @@ export interface PaperInfo {
   filename: string
   status: PaperStatus
   error: string | null
+  createdAt: string | null
 }
 
-export class PaperUploadError extends Error {}
+export class PaperUploadError extends ApiError {}
+
+function mapPaper(p: ApiPaper): PaperInfo {
+  return { id: p.id, filename: p.filename, status: p.status, error: p.error ?? null, createdAt: p.created_at ?? null }
+}
 
 export async function uploadPaper(file: File): Promise<PaperInfo> {
   const form = new FormData()
   form.append('file', file)
-
-  let response: Response
-  try {
-    response = await fetch('/api/papers/upload', { method: 'POST', body: form })
-  } catch {
-    throw new PaperUploadError('Không thể kết nối tới máy chủ paperai (kiểm tra backend đã chạy chưa).')
-  }
-
-  if (!response.ok) {
-    let detail = `paperai API trả lỗi (${response.status}).`
-    try {
-      const body = (await response.json()) as { detail?: string }
-      if (body?.detail) detail = body.detail
-    } catch {
-      // ignore
-    }
-    throw new PaperUploadError(detail)
-  }
-
-  const data = (await response.json()) as ApiPaperUploadResponse
-  return { id: data.id, filename: data.filename, status: data.status, error: null }
+  const data = await apiFetch<ApiPaper>('/papers/upload', { method: 'POST', body: form }, PaperUploadError)
+  return mapPaper(data)
 }
 
 export async function getPaper(id: string): Promise<PaperInfo> {
-  let response: Response
-  try {
-    response = await fetch(`/api/papers/${id}`)
-  } catch {
-    throw new PaperUploadError('Không thể kết nối tới máy chủ paperai (kiểm tra backend đã chạy chưa).')
-  }
+  return mapPaper(await apiFetch<ApiPaper>(`/papers/${id}`, {}, PaperUploadError))
+}
 
-  if (!response.ok) {
-    throw new PaperUploadError(`paperai API trả lỗi (${response.status}).`)
-  }
+export async function listPapers(
+  params: { limit?: number; offset?: number; status?: PaperStatus | null } = {},
+): Promise<{ items: PaperInfo[]; total: number }> {
+  const data = await apiFetch<{ items: ApiPaper[]; total: number }>(
+    `/papers${toQuery({ limit: params.limit ?? 50, offset: params.offset ?? 0, status: params.status ?? null })}`,
+    {},
+    PaperUploadError,
+  )
+  return { items: data.items.map(mapPaper), total: data.total }
+}
 
-  const data = (await response.json()) as ApiPaperStatusResponse
-  return { id: data.id, filename: data.filename, status: data.status, error: data.error }
+export async function reprocessPaper(id: string): Promise<PaperInfo> {
+  return mapPaper(await apiFetch<ApiPaper>(`/papers/${id}/reprocess`, { method: 'POST' }, PaperUploadError))
+}
+
+export function deletePaper(id: string): Promise<void> {
+  return apiFetch<void>(`/papers/${id}`, { method: 'DELETE' }, PaperUploadError)
 }

@@ -229,3 +229,12 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+/* Giới hạn 2 dòng cho ô bảng chứa văn bản dài (câu hỏi đã tinh chỉnh, thông điệp lỗi). */
+.admin-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

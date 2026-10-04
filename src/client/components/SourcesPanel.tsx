@@ -2,6 +2,7 @@ import { Library, Search, PanelRight } from 'lucide-react'
 import { useApp } from '../state/AppContext'
 import SourceCard from './SourceCard'
 import type { SourceFilter } from '../../types'
+import type { SourceSort } from '../state/appReducer'
 
 const FILTERS: { key: SourceFilter; label: string }[] = [
   { key: 'all', label: 'All' },
@@ -86,7 +87,7 @@ export default function SourcesPanel({ mobileOpen, onCloseDrawer }: SourcesPanel
           <span>Sort:</span>
           <select
             value={state.sourceSort}
-            onChange={(e) => setSourceSort(e.target.value as typeof state.sourceSort)}
+            onChange={(e) => setSourceSort(e.target.value as SourceSort)}
             style={{
               background: '#fff',
               border: '1px solid var(--color-hairline)',

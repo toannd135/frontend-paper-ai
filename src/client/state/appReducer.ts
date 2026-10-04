@@ -4,11 +4,14 @@ import type {
   Citation,
   ClarificationQuestionSpec,
   PaperStatus,
+  ResearchHistoryItem,
   ResearchSource,
   SourceFilter,
   SourceRelation,
   Stage,
 } from '../../types'
+
+export type SourceSort = 'relevance' | 'year' | 'citation'
 
 export interface AppState {
   stage: Stage
@@ -27,7 +30,7 @@ export interface AppState {
   activeTab: ActiveTab
   sourceFilter: SourceFilter
   sourceSearch: string
-  sourceSort: 'relevance' | 'year' | 'citation'
+  sourceSort: SourceSort
   sidebarCollapsed: boolean
   sourcesPanelOpen: boolean
   messages: ChatMessage[]
@@ -35,6 +38,9 @@ export interface AppState {
   flashSourceId: string | null
   headerTitle: string
   headerSubtitle: string
+  history: ResearchHistoryItem[]
+  historyLoading: boolean
+  historyError: string | null
 }
 
 export const initialState: AppState = {
@@ -62,28 +68,57 @@ export const initialState: AppState = {
   flashSourceId: null,
   headerTitle: 'Nghiên cứu mới',
   headerSubtitle: 'Chưa bắt đầu',
+  history: [],
+  historyLoading: false,
+  historyError: null,
+}
+
+/** Reset về trạng thái ban đầu nhưng giữ các tuỳ chọn giao diện và lịch sử đã tải. */
+export function freshSession(state: AppState): AppState {
+  return {
+    ...initialState,
+    sidebarCollapsed: state.sidebarCollapsed,
+    history: state.history,
+    historyLoading: state.historyLoading,
+    historyError: state.historyError,
+  }
+}
+
+function truncateTitle(text: string, max = 56): string {
+  return text.length > max ? text.slice(0, max - 1) + '…' : text
 }
 
 export type Action =
+  | { type: 'RESET' }
   | { type: 'START_TOPIC'; topic: string; userMsgId: string; typingId: string }
-  | { type: 'REPLACE_TYPING'; id: string; text: string; citations?: Citation[] }
+  | { type: 'START_CHAT'; title: string }
+  | { type: 'REPLACE_TYPING'; id: string; text: string; citations?: Citation[]; tone?: 'info' | 'error' | 'success' }
   | { type: 'ADD_MESSAGE'; message: ChatMessage }
   | { type: 'SET_CLARIFICATION_QUESTIONS'; questions: ClarificationQuestionSpec[] }
   | { type: 'ANSWER_CLARIFY'; cardId: string; value: string; userMsgId: string }
   | { type: 'SET_RESEARCH_TASK'; id: string }
   | { type: 'SET_RESEARCH_RESULT'; report: string; citations: Citation[] }
   | { type: 'SET_RESEARCH_ERROR' }
+  | {
+      type: 'LOAD_RESEARCH_TASK'
+      id: string
+      question: string
+      report: string | null
+      citations: Citation[]
+      status: string
+      summaryMsgId: string
+    }
   | { type: 'SET_CONVERSATION_ID'; id: string }
   | { type: 'SET_PAPER_ID'; id: string | null }
   | { type: 'UPDATE_PAPER_UPLOAD'; id: string; status: PaperStatus; error: string | null }
   | { type: 'SET_STAGE'; stage: Stage }
   | { type: 'ADVANCE_PROGRESS'; id: string }
   | { type: 'FINISH_PROGRESS'; id: string }
-  | { type: 'ADD_SOURCE'; source: ResearchSource }
+  | { type: 'ADD_SOURCES'; sources: ResearchSource[] }
   | { type: 'SET_SOURCE_RELATIONS'; relations: SourceRelation[] }
   | { type: 'SET_SOURCE_FILTER'; filter: SourceFilter }
   | { type: 'SET_SOURCE_SEARCH'; value: string }
-  | { type: 'SET_SOURCE_SORT'; value: 'relevance' | 'year' | 'citation' }
+  | { type: 'SET_SOURCE_SORT'; value: SourceSort }
   | { type: 'TOGGLE_SELECT_SOURCE'; id: string }
   | { type: 'AUTO_SELECT'; ids: string[] }
   | { type: 'SET_ACTIVE_TAB'; tab: ActiveTab }
@@ -95,27 +130,47 @@ export type Action =
   | { type: 'CLOSE_MODAL' }
   | { type: 'FLASH_SOURCE'; id: string | null }
   | { type: 'MARK_GENERATE_CLICKED'; id: string }
+  | { type: 'HISTORY_LOADING' }
+  | { type: 'SET_HISTORY'; items: ResearchHistoryItem[] }
+  | { type: 'HISTORY_ERROR'; message: string }
+  | { type: 'REMOVE_HISTORY_ITEM'; id: string }
 
 export function appReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
+    case 'RESET':
+      return freshSession(state)
     case 'START_TOPIC': {
       const userMsg: ChatMessage = { kind: 'user', id: action.userMsgId, text: action.topic }
       const typingMsg: ChatMessage = { kind: 'ai-typing', id: action.typingId }
       return {
-        ...state,
+        ...freshSession(state),
         topic: action.topic,
         stage: 'questions',
-        headerTitle: action.topic.length > 56 ? action.topic.slice(0, 55) + '…' : action.topic,
+        headerTitle: truncateTitle(action.topic),
         headerSubtitle: 'Đang làm rõ yêu cầu nghiên cứu',
-        messages: [...state.messages, userMsg, typingMsg],
+        messages: [userMsg, typingMsg],
       }
     }
+    case 'START_CHAT':
+      return {
+        ...freshSession(state),
+        stage: 'chat',
+        topic: action.title,
+        headerTitle: truncateTitle(action.title),
+        headerSubtitle: 'Hỏi đáp trực tiếp với tài liệu',
+      }
     case 'REPLACE_TYPING': {
       return {
         ...state,
         messages: state.messages.map((m) =>
           m.id === action.id
-            ? ({ kind: 'ai-text', id: action.id, text: action.text, citations: action.citations } satisfies ChatMessage)
+            ? ({
+                kind: 'ai-text',
+                id: action.id,
+                text: action.text,
+                citations: action.citations,
+                tone: action.tone,
+              } satisfies ChatMessage)
             : m,
         ),
       }
@@ -143,6 +198,31 @@ export function appReducer(state: AppState, action: Action): AppState {
       return { ...state, report: action.report, citations: action.citations }
     case 'SET_RESEARCH_ERROR':
       return { ...state, researchTaskId: null }
+    case 'LOAD_RESEARCH_TASK': {
+      const done = action.status === 'done' && !!action.report
+      const summary: ChatMessage = {
+        kind: 'ai-text',
+        id: action.summaryMsgId,
+        text: done
+          ? `Đã mở lại báo cáo nghiên cứu với ${action.citations.length} trích dẫn. Bạn có thể xem ở tab Article hoặc tiếp tục hỏi đáp tại đây.`
+          : action.status === 'failed'
+            ? 'Phiên nghiên cứu này đã thất bại trước đó. Bạn có thể bắt đầu lại với câu hỏi mới.'
+            : 'Phiên nghiên cứu này vẫn đang xử lý. Hệ thống sẽ tiếp tục kiểm tra trạng thái.',
+        tone: done ? 'success' : action.status === 'failed' ? 'error' : 'info',
+      }
+      return {
+        ...freshSession(state),
+        stage: done ? 'article' : action.status === 'failed' ? 'research-complete' : 'researching',
+        topic: action.question,
+        researchTaskId: action.id,
+        report: action.report,
+        citations: action.citations,
+        headerTitle: truncateTitle(action.question),
+        headerSubtitle: done ? 'Bài báo đã sẵn sàng' : action.status === 'failed' ? 'Nghiên cứu thất bại' : 'Đang nghiên cứu chủ đề...',
+        activeTab: done ? 'article' : 'research',
+        messages: [{ kind: 'user', id: `${action.summaryMsgId}_u`, text: action.question }, summary],
+      }
+    }
     case 'SET_CONVERSATION_ID':
       return { ...state, conversationId: action.id }
     case 'SET_PAPER_ID':
@@ -161,9 +241,9 @@ export function appReducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         messages: state.messages.map((m) => {
-          if (m.kind !== 'progress' || m.id !== action.id) return m
+          if (m.kind !== 'progress' || m.id !== action.id || m.finished) return m
           const activeIndex = Math.min(m.activeIndex + 1, m.steps.length - 1)
-          const doneCount = m.activeIndex >= 0 ? m.activeIndex + 1 : 0
+          const doneCount = Math.min(m.activeIndex >= 0 ? m.activeIndex + 1 : 0, m.steps.length - 1)
           return { ...m, activeIndex, doneCount }
         }),
       }
@@ -172,14 +252,15 @@ export function appReducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         messages: state.messages.map((m) =>
-          m.kind === 'progress' && m.id === action.id
-            ? { ...m, finished: true, doneCount: m.steps.length }
-            : m,
+          m.kind === 'progress' && m.id === action.id ? { ...m, finished: true, doneCount: m.steps.length } : m,
         ),
       }
     }
-    case 'ADD_SOURCE':
-      return { ...state, sources: [...state.sources, action.source] }
+    case 'ADD_SOURCES': {
+      const existing = new Set(state.sources.map((s) => s.id))
+      const fresh = action.sources.filter((s) => !existing.has(s.id))
+      return fresh.length ? { ...state, sources: [...state.sources, ...fresh] } : state
+    }
     case 'SET_SOURCE_RELATIONS':
       return { ...state, sourceRelations: action.relations }
     case 'SET_SOURCE_FILTER':
@@ -226,6 +307,14 @@ export function appReducer(state: AppState, action: Action): AppState {
           m.kind === 'generate-button' && m.id === action.id ? { ...m, clicked: true } : m,
         ),
       }
+    case 'HISTORY_LOADING':
+      return { ...state, historyLoading: true, historyError: null }
+    case 'SET_HISTORY':
+      return { ...state, history: action.items, historyLoading: false, historyError: null }
+    case 'HISTORY_ERROR':
+      return { ...state, historyLoading: false, historyError: action.message }
+    case 'REMOVE_HISTORY_ITEM':
+      return { ...state, history: state.history.filter((h) => h.id !== action.id) }
     default:
       return state
   }
