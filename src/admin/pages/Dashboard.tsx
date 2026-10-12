@@ -19,8 +19,8 @@ const PAPER_STATUS: Record<string, { color: string; label: string }> = {
 
 export default function Dashboard() {
   const papers = useAsyncList(useCallback(() => listPapers({ limit: 200 }), []))
-  const research = useAsyncList(useCallback(() => listResearchTasks(200), []))
-  const conversations = useAsyncList(useCallback(() => listConversations(200), []))
+  const research = useAsyncList(useCallback(() => listResearchTasks({ limit: 200 }), []))
+  const conversations = useAsyncList(useCallback(() => listConversations({ limit: 200 }), []))
 
   const reloadAll = () => {
     void papers.reload()

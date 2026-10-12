@@ -9,7 +9,7 @@ export type Stage =
 
 export type ActiveTab = 'research' | 'article' | 'graph'
 
-export type SourceFilter = 'all' | 'selected' | 'high' | 'recent'
+export type SourceFilter = 'all' | 'high' | 'recent'
 
 export interface ResearchSourceRaw {
   title: string

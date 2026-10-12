@@ -26,7 +26,6 @@ export interface AppState {
   paperId: string | null
   sources: ResearchSource[]
   sourceRelations: SourceRelation[]
-  selectedIds: Set<string>
   activeTab: ActiveTab
   sourceFilter: SourceFilter
   sourceSearch: string
@@ -56,7 +55,6 @@ export const initialState: AppState = {
   paperId: null,
   sources: [],
   sourceRelations: [],
-  selectedIds: new Set(),
   activeTab: 'research',
   sourceFilter: 'all',
   sourceSearch: '',
@@ -90,7 +88,7 @@ function truncateTitle(text: string, max = 56): string {
 
 export type Action =
   | { type: 'RESET' }
-  | { type: 'START_TOPIC'; topic: string; userMsgId: string; typingId: string }
+  | { type: 'START_TOPIC'; topic: string; userMsgId: string }
   | { type: 'START_CHAT'; title: string }
   | { type: 'REPLACE_TYPING'; id: string; text: string; citations?: Citation[]; tone?: 'info' | 'error' | 'success' }
   | { type: 'ADD_MESSAGE'; message: ChatMessage }
@@ -119,8 +117,6 @@ export type Action =
   | { type: 'SET_SOURCE_FILTER'; filter: SourceFilter }
   | { type: 'SET_SOURCE_SEARCH'; value: string }
   | { type: 'SET_SOURCE_SORT'; value: SourceSort }
-  | { type: 'TOGGLE_SELECT_SOURCE'; id: string }
-  | { type: 'AUTO_SELECT'; ids: string[] }
   | { type: 'SET_ACTIVE_TAB'; tab: ActiveTab }
   | { type: 'SET_HEADER'; title?: string; subtitle?: string }
   | { type: 'TOGGLE_SIDEBAR_COLLAPSED' }
@@ -140,15 +136,16 @@ export function appReducer(state: AppState, action: Action): AppState {
     case 'RESET':
       return freshSession(state)
     case 'START_TOPIC': {
+      // Chỉ thêm tin nhắn của người dùng — bong bóng "đang gõ" do appendAiTypingThenText tạo,
+      // thêm ở đây nữa sẽ sinh 2 bong bóng và cái đầu không bao giờ được thay thế.
       const userMsg: ChatMessage = { kind: 'user', id: action.userMsgId, text: action.topic }
-      const typingMsg: ChatMessage = { kind: 'ai-typing', id: action.typingId }
       return {
         ...freshSession(state),
         topic: action.topic,
         stage: 'questions',
         headerTitle: truncateTitle(action.topic),
         headerSubtitle: 'Đang làm rõ yêu cầu nghiên cứu',
-        messages: [userMsg, typingMsg],
+        messages: [userMsg],
       }
     }
     case 'START_CHAT':
@@ -243,6 +240,7 @@ export function appReducer(state: AppState, action: Action): AppState {
         messages: state.messages.map((m) => {
           if (m.kind !== 'progress' || m.id !== action.id || m.finished) return m
           const activeIndex = Math.min(m.activeIndex + 1, m.steps.length - 1)
+          // Bước cuối chỉ được tick khi FINISH_PROGRESS, tránh hiện "xong hết" trong lúc vẫn đang poll.
           const doneCount = Math.min(m.activeIndex >= 0 ? m.activeIndex + 1 : 0, m.steps.length - 1)
           return { ...m, activeIndex, doneCount }
         }),
@@ -269,17 +267,6 @@ export function appReducer(state: AppState, action: Action): AppState {
       return { ...state, sourceSearch: action.value }
     case 'SET_SOURCE_SORT':
       return { ...state, sourceSort: action.value }
-    case 'TOGGLE_SELECT_SOURCE': {
-      const next = new Set(state.selectedIds)
-      if (next.has(action.id)) next.delete(action.id)
-      else next.add(action.id)
-      return { ...state, selectedIds: next }
-    }
-    case 'AUTO_SELECT': {
-      const next = new Set(state.selectedIds)
-      action.ids.forEach((id) => next.add(id))
-      return { ...state, selectedIds: next }
-    }
     case 'SET_ACTIVE_TAB':
       return { ...state, activeTab: action.tab }
     case 'SET_HEADER':

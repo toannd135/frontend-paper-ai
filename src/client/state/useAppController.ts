@@ -21,6 +21,8 @@ function uid(prefix: string) {
 }
 
 const RESEARCH_POLL_MS = 2500
+// Panel chỉ hiển thị các nguồn liên quan nhất; agent vẫn tìm trên toàn bộ kho ở backend.
+const TOP_SOURCES = 20
 const PAPER_POLL_MS = 1500
 const HISTORY_LIMIT = 100
 
@@ -61,7 +63,7 @@ export function useAppController() {
   const refreshHistory = useCallback(async () => {
     dispatch({ type: 'HISTORY_LOADING' })
     try {
-      const { items } = await listResearchTasks(HISTORY_LIMIT)
+      const { items } = await listResearchTasks({ limit: HISTORY_LIMIT })
       dispatch({
         type: 'SET_HISTORY',
         items: items.map((t) => ({
@@ -103,7 +105,11 @@ export function useAppController() {
   const populateSourcesProgressively = useCallback(
     async (query: string) => {
       try {
-        const { sources, relations } = await searchSources(query)
+        const found = await searchSources(query)
+        // Giữ TOP_SOURCES bài liên quan nhất và chỉ các quan hệ nằm trọn trong tập đó.
+        const sources = [...found.sources].sort((a, b) => b.relevance - a.relevance).slice(0, TOP_SOURCES)
+        const keptIds = new Set(sources.map((s) => s.id))
+        const relations = found.relations.filter((r) => keptIds.has(r.source) && keptIds.has(r.target))
         dispatch({ type: 'SET_SOURCE_RELATIONS', relations })
         // Ít nguồn: hiện từng cái cho mượt; nhiều nguồn: gộp lô để tổng thời gian ~8s bất kể số lượng.
         const batchSize = Math.max(1, Math.ceil(sources.length / 40))
@@ -143,8 +149,6 @@ export function useAppController() {
     const sources = stateRef.current.sources
     const citationCount = stateRef.current.citations.length
     dispatch({ type: 'SET_HEADER', subtitle: `${sources.length} nguồn tham khảo đã tìm thấy` })
-    const top8 = [...sources].sort((a, b) => b.relevance - a.relevance).slice(0, 8)
-    dispatch({ type: 'AUTO_SELECT', ids: top8.map((p) => p.id) })
     void refreshHistory()
 
     appendAiTypingThenText(
@@ -256,7 +260,7 @@ export function useAppController() {
       const trimmed = topic.trim()
       if (!trimmed) return
       cancelAllTimers()
-      dispatch({ type: 'START_TOPIC', topic: trimmed, userMsgId: uid('u'), typingId: uid('ai') })
+      dispatch({ type: 'START_TOPIC', topic: trimmed, userMsgId: uid('u') })
       appendAiTypingThenText(
         'Tôi đã hiểu chủ đề nghiên cứu của bạn.\nĐể xây dựng một bài báo phù hợp hơn, tôi cần xác định thêm một vài thông tin.',
         async () => {
@@ -450,7 +454,6 @@ export function useAppController() {
     [onArticleReady],
   )
 
-  const toggleSelectSource = useCallback((id: string) => dispatch({ type: 'TOGGLE_SELECT_SOURCE', id }), [])
   const setSourceFilter = useCallback((filter: SourceFilter) => dispatch({ type: 'SET_SOURCE_FILTER', filter }), [])
   const setSourceSearch = useCallback((value: string) => dispatch({ type: 'SET_SOURCE_SEARCH', value }), [])
   const setSourceSort = useCallback((value: SourceSort) => dispatch({ type: 'SET_SOURCE_SORT', value }), [])
@@ -481,7 +484,6 @@ export function useAppController() {
     answerClarify,
     beginResearchFromSpec,
     beginArticleFromButton,
-    toggleSelectSource,
     setSourceFilter,
     setSourceSearch,
     setSourceSort,

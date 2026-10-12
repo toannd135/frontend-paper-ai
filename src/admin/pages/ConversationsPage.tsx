@@ -9,7 +9,7 @@ import { getConversation, listConversations, type ConversationDetail, type Conve
 import { ApiError } from '../../client/api/http'
 
 export default function ConversationsPage() {
-  const loader = useCallback(() => listConversations(200), [])
+  const loader = useCallback(() => listConversations({ limit: 200 }), [])
   const { items, total, loading, error, reload } = useAsyncList(loader)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [detail, setDetail] = useState<ConversationDetail | null>(null)

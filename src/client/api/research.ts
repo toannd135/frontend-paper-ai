@@ -105,12 +105,15 @@ export async function getResearchTask(id: string): Promise<ResearchTask> {
   return mapTask(await apiFetch<ApiResearchTask>(`/research/${id}`, {}, ResearchError))
 }
 
-export async function listResearchTasks(limit = 50, offset = 0): Promise<{ items: ResearchSummary[]; total: number }> {
-  const data = await apiFetch<{ items: ApiResearchSummary[]; total: number }>(
-    `/research${toQuery({ limit, offset })}`,
-    {},
-    ResearchError,
-  )
+export async function listResearchTasks(
+  params: { limit?: number; offset?: number; status?: ResearchStatus | null } = {},
+): Promise<{ items: ResearchSummary[]; total: number }> {
+  const query = toQuery({
+    limit: params.limit ?? 50,
+    offset: params.offset ?? 0,
+    status: params.status ?? null,
+  })
+  const data = await apiFetch<{ items: ApiResearchSummary[]; total: number }>(`/research${query}`, {}, ResearchError)
   return { items: data.items.map(mapSummary), total: data.total }
 }
 

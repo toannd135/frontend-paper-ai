@@ -38,7 +38,7 @@ const hasActive = (items: ResearchSummary[]) => items.some((t) => t.status === '
 
 export default function ResearchJobsPage() {
   const { message } = AntApp.useApp()
-  const loader = useCallback(() => listResearchTasks(200), [])
+  const loader = useCallback(() => listResearchTasks({ limit: 200 }), [])
   const { items, total, loading, error, reload } = useAsyncList(loader, { pollMs: 4000, shouldPoll: hasActive })
 
   const remove = async (id: string) => {

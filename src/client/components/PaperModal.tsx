@@ -2,16 +2,19 @@ import { Modal, Progress, Tag } from 'antd'
 import { ExternalLink } from 'lucide-react'
 import { useApp } from '../state/AppContext'
 
-/** Chi tiết 1 nguồn OpenAlex. Chỉ hiển thị dữ liệu thật (metadata + abstract), không có phần tóm tắt giả lập. */
+/**
+ * Chi tiết 1 nguồn OpenAlex. Chỉ hiển thị dữ liệu thật (metadata + abstract), không có phần tóm tắt giả lập.
+ * Không còn nút thêm/bỏ nguồn: research agent luôn tìm trên toàn bộ kho nên việc chọn thủ công không
+ * ảnh hưởng tới kết quả, giữ lại chỉ gây hiểu nhầm.
+ */
 export default function PaperModal() {
-  const { state, closePaperModal, toggleSelectSource } = useApp()
+  const { state, closePaperModal } = useApp()
   const paper = state.sources.find((s) => s.id === state.modalSourceId) || null
 
   if (!paper) {
     return <Modal open={false} footer={null} onCancel={closePaperModal} destroyOnHidden />
   }
 
-  const selected = state.selectedIds.has(paper.id)
   const openAlexUrl = `https://openalex.org/${paper.id}`
 
   return (
@@ -73,15 +76,6 @@ export default function PaperModal() {
       </div>
 
       <div className="paper-modal-footer">
-        <button
-          className={`paper-modal-btn${selected ? ' selected' : ''}`}
-          onClick={() => {
-            toggleSelectSource(paper.id)
-            closePaperModal()
-          }}
-        >
-          {selected ? 'Bỏ khỏi nghiên cứu' : 'Thêm vào nghiên cứu'}
-        </button>
         <a
           className="paper-modal-link"
           href={paper.doi ? `https://doi.org/${paper.doi}` : openAlexUrl}

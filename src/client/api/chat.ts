@@ -87,8 +87,15 @@ interface ApiConversationList {
   total: number
 }
 
-export async function listConversations(limit = 50, offset = 0): Promise<{ items: ConversationSummary[]; total: number }> {
-  const data = await apiFetch<ApiConversationList>(`/conversations${toQuery({ limit, offset })}`, {}, ChatError)
+export async function listConversations(
+  params: { limit?: number; offset?: number; paperId?: string | null } = {},
+): Promise<{ items: ConversationSummary[]; total: number }> {
+  const query = toQuery({
+    limit: params.limit ?? 50,
+    offset: params.offset ?? 0,
+    paper_id: params.paperId ?? null,
+  })
+  const data = await apiFetch<ApiConversationList>(`/conversations${query}`, {}, ChatError)
   return {
     total: data.total,
     items: data.items.map((c) => ({
