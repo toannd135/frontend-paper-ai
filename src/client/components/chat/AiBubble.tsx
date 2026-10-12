@@ -25,11 +25,21 @@ export function AiTyping() {
   )
 }
 
-export function AiText({ text, citations }: { text: string; citations?: Citation[] }) {
+export function AiText({
+  text,
+  citations,
+  tone,
+}: {
+  text: string
+  citations?: Citation[]
+  tone?: 'info' | 'error' | 'success'
+}) {
   return (
     <div className="chat-row ai animate-fade-up">
       <AiAvatar />
-      <div className="bubble ai">{citations && citations.length > 0 ? renderCitedText(text, citations) : text}</div>
+      <div className={`bubble ai${tone ? ` tone-${tone}` : ''}`}>
+        {citations && citations.length > 0 ? renderCitedText(text, citations) : text}
+      </div>
     </div>
   )
 }

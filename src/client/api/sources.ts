@@ -1,4 +1,5 @@
 import type { ResearchSource, SourceRelation } from '../../types'
+import { ApiError, apiFetch, toQuery } from './http'
 
 interface ApiExternalSource {
   id: string
@@ -18,37 +19,18 @@ interface ApiSourceSearchResponse {
   relations: SourceRelation[]
 }
 
-export class SourceSearchError extends Error {}
+export class SourceSearchError extends ApiError {}
 
-export async function searchSources(query: string, limit = 150): Promise<{
-  sources: ResearchSource[]
-  relations: SourceRelation[]
-}> {
-  let response: Response
-  try {
-    response = await fetch(`/api/sources/search?query=${encodeURIComponent(query)}&limit=${limit}`)
-  } catch {
-    throw new SourceSearchError('Không thể kết nối tới máy chủ paperai (kiểm tra backend đã chạy chưa).')
-  }
-
-  if (!response.ok) {
-    throw new SourceSearchError(`OpenAlex/paperai API trả lỗi (${response.status}).`)
-  }
-
-  const data = (await response.json()) as ApiSourceSearchResponse
-  const sources: ResearchSource[] = data.sources.map((s) => ({
-    id: s.id,
-    title: s.title,
-    authors: s.authors,
-    year: s.year,
-    publisher: s.publisher,
-    type: s.type,
-    doi: s.doi,
-    relevance: s.relevance,
-    citations: s.citations,
-    abstract: s.abstract,
-    status: 'found',
-  }))
-
+export async function searchSources(
+  query: string,
+  limit = 150,
+): Promise<{ sources: ResearchSource[]; relations: SourceRelation[] }> {
+  const data = await apiFetch<ApiSourceSearchResponse>(
+    `/sources/search${toQuery({ query, limit })}`,
+    {},
+    SourceSearchError,
+    // (statusMessages không áp dụng cho apiFetch trực tiếp — detail của backend đã đủ rõ)
+  )
+  const sources: ResearchSource[] = data.sources.map((s) => ({ ...s, status: 'found' }))
   return { sources, relations: data.relations }
 }

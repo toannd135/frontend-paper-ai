@@ -1,29 +1,48 @@
-import { Form, Select, Slider, InputNumber, Input, Button, Tag, App as AntApp } from 'antd'
+import { useEffect, useState } from 'react'
+import { Form, Slider, InputNumber, Input, Button, Tag, App as AntApp, Alert } from 'antd'
 import PageHeader from '../components/PageHeader'
 import UnimplementedBanner from '../components/UnimplementedBanner'
-
-const PROVIDERS = [
-  { value: 'gemini', label: 'Google Gemini (gemini-2.5-flash)', status: 'active' },
-  { value: 'anthropic', label: 'Anthropic Claude', status: 'stub' },
-  { value: 'openai', label: 'OpenAI', status: 'stub' },
-  { value: 'vllm', label: 'Self-hosted vLLM', status: 'stub' },
-]
+import { fetchChatModels, type ChatModel } from '../../client/api/chat'
 
 export default function AiSettingsPage() {
   const { message } = AntApp.useApp()
   const [form] = Form.useForm()
+  const [models, setModels] = useState<ChatModel[] | null>(null)
+  const [modelsError, setModelsError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchChatModels()
+      .then(setModels)
+      .catch((err) => setModelsError(err instanceof Error ? err.message : 'Không tải được danh sách model.'))
+  }, [])
 
   return (
     <div>
       <PageHeader
         title="Cấu hình AI & Retrieval"
-        description="Các tham số này ánh xạ trực tiếp tới app/core/config.py (biến môi trường Settings) đang điều khiển pipeline embedding/retrieval/generation."
+        description="Các tham số ánh xạ tới app/core/config.py (Settings), điều khiển pipeline embedding / retrieval / generation."
       />
 
+      <div className="admin-card" style={{ maxWidth: 720, marginBottom: 16 }}>
+        <p className="admin-card-title">LLM providers (thật, từ GET /chat/models)</p>
+        {modelsError && <Alert type="warning" showIcon message={modelsError} style={{ marginBottom: 12 }} />}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {(models ?? []).map((m) => (
+            <Tag key={m.id} color={m.available ? 'success' : 'default'} style={{ padding: '4px 10px', fontSize: 12.5 }}>
+              {m.label} · {m.available ? 'đã có API key' : 'thiếu API key'}
+            </Tag>
+          ))}
+          {models && models.length === 0 && <span style={{ fontSize: 12.5 }}>Backend không khai báo model nào.</span>}
+        </div>
+        <p style={{ fontSize: 12, color: 'var(--color-ink-muted)', marginTop: 10, marginBottom: 0 }}>
+          Research agent chọn provider theo <code>AGENT_PROVIDER</code>, nếu trống thì lấy provider đầu tiên có key
+          (openrouter → groq → gemini → anthropic → openai). Đổi provider bằng cách sửa <code>.env</code> rồi khởi động lại API và worker.
+        </p>
+      </div>
+
       <UnimplementedBanner>
-        Đây là trang cấu hình <strong>thật nhất</strong> trong CMS này — mọi trường bên dưới đều tương ứng 1-1 với
-        biến trong <code>.env</code> / <code>Settings</code>. Cần thêm <code>PATCH /admin/settings/ai</code> ở
-        backend (hiện chưa có) để form này ghi thay đổi thật; hiện tại Lưu chỉ mô phỏng phía client.
+        Form bên dưới hiển thị giá trị mặc định của <code>Settings</code>. Backend chưa có{' '}
+        <code>PATCH /admin/settings</code> nên nút Lưu chỉ mô phỏng — thay đổi thật phải sửa <code>.env</code>.
       </UnimplementedBanner>
 
       <div className="admin-card" style={{ maxWidth: 720 }}>
@@ -31,7 +50,6 @@ export default function AiSettingsPage() {
           form={form}
           layout="vertical"
           initialValues={{
-            provider: 'gemini',
             embeddingModel: 'BAAI/bge-m3',
             rerankerModel: 'BAAI/bge-reranker-v2-m3',
             hybridAlpha: 0.7,
@@ -39,24 +57,13 @@ export default function AiSettingsPage() {
             contextTokenLimit: 8000,
             qdrantCollection: 'paper_chunks',
           }}
-          onFinish={() => message.success('Đã lưu cấu hình (mô phỏng — chưa có endpoint PATCH thật)')}
+          onValuesChange={(changed) => {
+            if (typeof changed.hybridAlpha === 'number') {
+              form.setFieldValue('hybridBeta', Math.round((1 - changed.hybridAlpha) * 100) / 100)
+            }
+          }}
+          onFinish={() => message.info('Mô phỏng: backend chưa có endpoint ghi cấu hình. Hãy sửa .env.')}
         >
-          <Form.Item label="LLM Provider" name="provider" tooltip="GEMINI_API_KEY trong .env">
-            <Select
-              options={PROVIDERS.map((p) => ({
-                value: p.value,
-                label: (
-                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    {p.label}
-                    <Tag color={p.status === 'active' ? 'success' : 'default'} style={{ marginLeft: 8 }}>
-                      {p.status === 'active' ? 'Đang dùng' : 'Chưa triển khai'}
-                    </Tag>
-                  </span>
-                ),
-              }))}
-            />
-          </Form.Item>
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <Form.Item label="Embedding model" name="embeddingModel" tooltip="EMBEDDING_MODEL">
               <Input />
@@ -66,7 +73,7 @@ export default function AiSettingsPage() {
             </Form.Item>
           </div>
 
-          <Form.Item label="Hybrid retrieval weight — vector (α) / BM25 (β)" tooltip="HYBRID_ALPHA / HYBRID_BETA">
+          <Form.Item label="Hybrid retrieval weight — vector (α) / BM25 (β = 1 − α)" tooltip="HYBRID_ALPHA / HYBRID_BETA">
             <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
               <Form.Item name="hybridAlpha" noStyle>
                 <Slider min={0} max={1} step={0.05} style={{ flex: 1 }} />

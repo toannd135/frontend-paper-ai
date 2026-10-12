@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { Paperclip, ArrowUp, Sparkles, FileText, Loader2, Check, X } from 'lucide-react'
+import { Paperclip, ArrowUp, FileText, Loader2, Check, X, BookOpenText } from 'lucide-react'
 import { useApp } from '../../state/AppContext'
 import { fetchChatModels, type ChatModel } from '../../api/chat'
 import UserBubble from './UserBubble'
@@ -70,6 +70,12 @@ export default function ChatView() {
   }
 
   const specStarted = state.stage !== 'specification'
+  const placeholder =
+    state.paperId && state.stage === 'chat'
+      ? 'Hỏi về nội dung tài liệu đã tải lên...'
+      : state.paperId
+        ? 'Hỏi về tài liệu đã tải lên hoặc chủ đề nghiên cứu...'
+        : 'Hỏi PaperAI về kho tài liệu đã lập chỉ mục...'
 
   return (
     <div className="chat-view">
@@ -81,7 +87,7 @@ export default function ChatView() {
             case 'ai-typing':
               return <AiTyping key={m.id} />
             case 'ai-text':
-              return <AiText key={m.id} text={m.text} citations={m.citations} />
+              return <AiText key={m.id} text={m.text} citations={m.citations} tone={m.tone} />
             case 'clarify':
               return (
                 <ClarifyCard
@@ -117,12 +123,16 @@ export default function ChatView() {
               return (
                 <div className="chat-row ai animate-fade-up" key={m.id}>
                   <div className="chat-avatar-spacer" />
-                  <div className="bubble ai" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <div className={`bubble ai paper-upload-bubble${m.status === 'failed' ? ' failed' : ''}`}>
                     <FileText size={14} />
-                    <span>{m.filename}</span>
-                    {(m.status === 'pending' || m.status === 'processing') && (
-                      <Loader2 size={14} className="spin" />
-                    )}
+                    <span className="paper-upload-name">{m.filename}</span>
+                    <span className="paper-upload-status">
+                      {m.status === 'pending' && 'đang tải lên'}
+                      {m.status === 'processing' && 'đang lập chỉ mục'}
+                      {m.status === 'done' && 'sẵn sàng'}
+                      {m.status === 'failed' && (m.error ?? 'thất bại')}
+                    </span>
+                    {(m.status === 'pending' || m.status === 'processing') && <Loader2 size={14} className="spin" />}
                     {m.status === 'done' && <Check size={14} color="var(--color-primary)" />}
                     {m.status === 'failed' && <X size={14} color="#c0392b" />}
                   </div>
@@ -135,21 +145,10 @@ export default function ChatView() {
                   <button
                     onClick={() => beginArticleFromButton(m.id)}
                     disabled={m.clicked}
-                    className="sidebar-footer-btn"
-                    style={{
-                      background: m.clicked ? 'rgba(217,164,65,0.6)' : 'var(--color-gold)',
-                      color: '#fff',
-                      fontWeight: 600,
-                      fontSize: '13.5px',
-                      padding: '10px 20px',
-                      width: 'auto',
-                      borderRadius: 10,
-                      boxShadow: 'var(--shadow-soft)',
-                      cursor: m.clicked ? 'default' : 'pointer',
-                    }}
+                    className={`generate-article-btn${m.clicked ? ' clicked' : ''}`}
                   >
-                    <Sparkles size={16} />
-                    <span>Tạo bài báo</span>
+                    <BookOpenText size={16} />
+                    <span>{m.clicked ? 'Đã mở bài báo' : 'Xem bài báo'}</span>
                   </button>
                 </div>
               )
@@ -180,7 +179,7 @@ export default function ChatView() {
         <div className="chat-input-card">
           <textarea
             rows={1}
-            placeholder="Nhắn tin cho PaperAI..."
+            placeholder={placeholder}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
@@ -195,7 +194,7 @@ export default function ChatView() {
           <button className="icon-btn" type="button" aria-label="Đính kèm tệp PDF" onClick={onAttachClick}>
             <Paperclip size={16} />
           </button>
-          <button className="round-send-btn" style={{ width: 32, height: 32 }} onClick={send} type="button">
+          <button className="round-send-btn" style={{ width: 32, height: 32 }} onClick={send} type="button" aria-label="Gửi" disabled={!input.trim()}>
             <ArrowUp size={16} />
           </button>
         </div>

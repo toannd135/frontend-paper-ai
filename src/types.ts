@@ -1,20 +1,15 @@
 export type Stage =
   | 'initial'
+  | 'chat' // hỏi-đáp trực tiếp với PDF đã tải lên, không chạy research agent
   | 'questions'
   | 'specification'
   | 'researching'
   | 'research-complete'
-  | 'generating'
   | 'article'
 
 export type ActiveTab = 'research' | 'article' | 'graph'
 
-export type SourceFilter = 'all' | 'selected' | 'high' | 'recent'
-
-export interface Conversation {
-  id: string
-  title: string
-}
+export type SourceFilter = 'all' | 'high' | 'recent'
 
 export interface ResearchSourceRaw {
   title: string
@@ -62,10 +57,20 @@ export interface ClarificationQuestionSpec {
   suggestions: string[]
 }
 
+/** Một mục trong lịch sử nghiên cứu (sidebar), map từ GET /research. */
+export interface ResearchHistoryItem {
+  id: string
+  question: string
+  status: ResearchStatus
+  hasReport: boolean
+  citationCount: number
+  createdAt: string
+}
+
 export type ChatMessage =
   | { kind: 'user'; id: string; text: string }
   | { kind: 'ai-typing'; id: string }
-  | { kind: 'ai-text'; id: string; text: string; citations?: Citation[] }
+  | { kind: 'ai-text'; id: string; text: string; citations?: Citation[]; tone?: 'info' | 'error' | 'success' }
   | {
       kind: 'clarify'
       id: string
@@ -78,7 +83,7 @@ export type ChatMessage =
   | {
       kind: 'progress'
       id: string
-      progressKey: 'researching' | 'generating'
+      progressKey: 'researching'
       steps: string[]
       activeIndex: number
       doneCount: number

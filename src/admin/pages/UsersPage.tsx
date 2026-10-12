@@ -24,10 +24,9 @@ export default function UsersPage() {
       />
 
       <UnimplementedBanner>
-        Backend hiện <strong>không có bảng users, không có auth/JWT, không có route quản lý user nào</strong>{' '}
-        (<code>app/api/routes/users.py</code> chỉ là docstring rỗng). Papers/Conversations cũng chưa gắn với chủ sở
-        hữu. Đây là mock IA cho module này — cần xây mới toàn bộ auth + user CRUD trước khi màn hình này hoạt động
-        thật.
+        Backend hiện <strong>không có bảng users, không có auth/JWT và không có route quản lý user</strong>. Papers,
+        hội thoại và research task chưa gắn với chủ sở hữu. Dữ liệu dưới đây là <strong>mock</strong> minh hoạ
+        information architecture — cần xây auth + user CRUD trước khi màn hình này hoạt động thật.
       </UnimplementedBanner>
 
       <div className="admin-card">

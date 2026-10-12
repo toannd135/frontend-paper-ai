@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Suspense, lazy, useState } from 'react'
 import { Library } from 'lucide-react'
 import { AppProvider, useApp } from './state/AppContext'
 import Sidebar from './components/Sidebar'
@@ -6,23 +6,35 @@ import Header from './components/Header'
 import InitialState from './components/InitialState'
 import ChatView from './components/chat/ChatView'
 import ArticleView from './components/article/ArticleView'
-import GraphView from './components/graph/GraphView'
 import SourcesPanel from './components/SourcesPanel'
 import PaperModal from './components/PaperModal'
+
+// 3d-force-graph + three nặng ~1MB: chỉ tải khi người dùng mở tab Graph.
+const GraphView = lazy(() => import('./components/graph/GraphView'))
 import './ClientApp.css'
 
 function Shell() {
-  const { state, submitTopic, setActiveTab, toggleSidebarCollapsed, toggleSourcesPanel } = useApp()
-  const [activeConversationId, setActiveConversationId] = useState('c1')
+  const {
+    state,
+    submitTopic,
+    startNewResearch,
+    startChatWithPaper,
+    openResearchTask,
+    removeResearchTask,
+    setActiveTab,
+    toggleSidebarCollapsed,
+    toggleSourcesPanel,
+  } = useApp()
   const [sidebarDrawerOpen, setSidebarDrawerOpen] = useState(false)
   const [sourcesDrawerOpen, setSourcesDrawerOpen] = useState(false)
 
-  const startNewResearch = () => {
-    window.location.reload()
+  const selectTask = (id: string) => {
+    void openResearchTask(id)
+    setSidebarDrawerOpen(false)
   }
 
-  const selectConversation = (id: string) => {
-    setActiveConversationId(id)
+  const newResearch = () => {
+    startNewResearch()
     setSidebarDrawerOpen(false)
   }
 
@@ -38,9 +50,13 @@ function Shell() {
       <Sidebar
         collapsed={state.sidebarCollapsed}
         mobileOpen={sidebarDrawerOpen}
-        activeConversationId={activeConversationId}
-        onSelectConversation={selectConversation}
-        onNewResearch={startNewResearch}
+        history={state.history}
+        historyLoading={state.historyLoading}
+        historyError={state.historyError}
+        activeTaskId={state.researchTaskId}
+        onSelectTask={selectTask}
+        onDeleteTask={(id) => void removeResearchTask(id)}
+        onNewResearch={newResearch}
         onCloseMobile={() => setSidebarDrawerOpen(false)}
       />
 
@@ -51,6 +67,7 @@ function Shell() {
           stage={state.stage}
           activeTab={state.activeTab}
           sourceCount={state.sources.length}
+          hasReport={!!state.report}
           onOpenSidebarDrawer={() => setSidebarDrawerOpen(true)}
           onToggleSidebarCollapse={toggleSidebarCollapsed}
           onSetActiveTab={setActiveTab}
@@ -60,11 +77,13 @@ function Shell() {
         <div className="content-row">
           <main className="workspace">
             {state.stage === 'initial' ? (
-              <InitialState onSubmit={submitTopic} />
+              <InitialState onSubmit={submitTopic} onUploadPaper={startChatWithPaper} />
             ) : state.activeTab === 'article' ? (
               <ArticleView />
             ) : state.activeTab === 'graph' ? (
-              <GraphView />
+              <Suspense fallback={<div className="lazy-fallback">Đang tải sơ đồ 3D…</div>}>
+                <GraphView />
+              </Suspense>
             ) : (
               <ChatView />
             )}
