@@ -7,6 +7,7 @@ import type { Citation } from '../../../types'
 import { renderArticleInline } from '../../lib/reportText'
 import ChartFigure, { parseChartSpec } from './ChartFigure'
 import MermaidDiagram from './MermaidDiagram'
+import { ArticleLangContext, detectArticleLang, labelsFor } from './articleLang'
 
 /**
  * Render markdown học thuật do research agent sinh ra: GFM (bảng), công thức $..$/$$..$$ (KaTeX),
@@ -101,6 +102,8 @@ function withCitations(children: ReactNode, citations: Citation[]): ReactNode {
 
 export default function ArticleMarkdown({ markdown, citations }: { markdown: string; citations: Citation[] }) {
   const source = useMemo(() => preprocess(markdown), [markdown])
+  const lang = useMemo(() => detectArticleLang(markdown), [markdown])
+  const labels = labelsFor(lang)
 
   const components = useMemo<Components>(() => {
     const cite = (c: ReactNode) => withCitations(c, citations)
@@ -138,7 +141,7 @@ export default function ArticleMarkdown({ markdown, citations }: { markdown: str
         return (
           <div className="article-table-wrap">
             <p className="article-caption article-caption-table">
-              <strong>Bảng {index}.</strong> {caption ? cite(caption) : null}
+              <strong>{labels.table} {index}.</strong> {caption ? cite(caption) : null}
             </p>
             <div className="article-table-scroll">
               <table className="article-table">{props.children}</table>
@@ -169,15 +172,17 @@ export default function ArticleMarkdown({ markdown, citations }: { markdown: str
         )
       },
     }
-  }, [citations])
+  }, [citations, labels])
 
   return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm, remarkMath, remarkFigureNumbering]}
-      rehypePlugins={[[rehypeKatex, { throwOnError: false, strict: false }]]}
-      components={components}
-    >
-      {source}
-    </ReactMarkdown>
+    <ArticleLangContext.Provider value={lang}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkMath, remarkFigureNumbering]}
+        rehypePlugins={[[rehypeKatex, { throwOnError: false, strict: false }]]}
+        components={components}
+      >
+        {source}
+      </ReactMarkdown>
+    </ArticleLangContext.Provider>
   )
 }

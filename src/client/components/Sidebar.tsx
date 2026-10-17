@@ -143,7 +143,7 @@ export default function Sidebar({
                   okButtonProps={{ danger: true }}
                   onConfirm={() => onDeleteTask(h.id)}
                 >
-                  <button className="conv-delete sidebar-label" aria-label="Xoá phiên nghiên cứu" disabled={h.status === 'processing'}>
+                  <button className="conv-delete sidebar-label" aria-label="Xoá phiên nghiên cứu">
                     <Trash2 size={13} />
                   </button>
                 </Popconfirm>

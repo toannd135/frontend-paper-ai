@@ -1,3 +1,4 @@
+import { useArticleLabels } from './articleLang'
 /**
  * Vẽ khối ```chart {json}``` do backend sinh (type bar|barh|line, labels, series[{name,values}]) bằng SVG thuần,
  * cùng spec với app/pipeline/export/typst_renderer.render_chart_spec_to_svg để web và PDF nhất quán.
@@ -40,6 +41,7 @@ function niceMax(values: number[]): number {
 }
 
 export default function ChartFigure({ spec, index }: { spec: ChartSpec; index: number }) {
+  const ui = useArticleLabels()
   const kind = spec.type ?? 'bar'
   const labels = spec.labels.map(String)
   const all = spec.series.flatMap((s) => s.values)
@@ -58,7 +60,7 @@ export default function ChartFigure({ spec, index }: { spec: ChartSpec; index: n
         className="article-figure-svg"
         viewBox={`0 0 ${W} ${H}`}
         role="img"
-        aria-label={caption || `Biểu đồ ${index}`}
+        aria-label={caption || `${ui.chart} ${index}`}
       >
         {/* grid + axis ticks */}
         {Array.from({ length: ticks + 1 }, (_, i) => {
@@ -178,7 +180,7 @@ export default function ChartFigure({ spec, index }: { spec: ChartSpec; index: n
           ))}
       </svg>
       <figcaption className="article-caption">
-        <strong>Hình {index}.</strong> {caption}
+        <strong>{ui.figure} {index}.</strong> {caption}
       </figcaption>
     </figure>
   )

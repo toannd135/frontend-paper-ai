@@ -1,10 +1,12 @@
 import { useEffect, useId, useState } from 'react'
+import { useArticleLabels } from './articleLang'
 
 /**
  * Render sơ đồ ```mermaid``` phía client. Thư viện mermaid nặng (~2MB) nên được nạp lười (dynamic import)
  * chỉ khi báo cáo thực sự có sơ đồ; nếu cú pháp lỗi thì hiển thị mã nguồn thay vì làm hỏng cả bài.
  */
 export default function MermaidDiagram({ code, index }: { code: string; index: number }) {
+  const labels = useArticleLabels()
   const [svg, setSvg] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const id = useId().replace(/[^a-zA-Z0-9]/g, '')
@@ -39,7 +41,7 @@ export default function MermaidDiagram({ code, index }: { code: string; index: n
           <code>{code}</code>
         </pre>
         <figcaption className="article-caption">
-          <strong>Hình {index}.</strong> Sơ đồ (không render được: {error.split('\n')[0]})
+          <strong>{labels.figure} {index}.</strong> {labels.diagramFailed}: {error.split('\n')[0]})
         </figcaption>
       </figure>
     )
@@ -50,10 +52,10 @@ export default function MermaidDiagram({ code, index }: { code: string; index: n
       {svg ? (
         <div className="article-mermaid" dangerouslySetInnerHTML={{ __html: svg }} />
       ) : (
-        <div className="article-mermaid article-mermaid-loading">Đang dựng sơ đồ…</div>
+        <div className="article-mermaid article-mermaid-loading">{labels.diagramLoading}</div>
       )}
       <figcaption className="article-caption">
-        <strong>Hình {index}.</strong> Sơ đồ kiến trúc / luồng xử lý
+        <strong>{labels.figure} {index}.</strong> {labels.diagram}
       </figcaption>
     </figure>
   )

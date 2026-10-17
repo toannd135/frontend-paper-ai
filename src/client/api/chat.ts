@@ -72,7 +72,7 @@ export async function sendChat(
       model: options.model ?? null,
     },
     ChatError,
-    { 404: 'Không tìm thấy nội dung liên quan trong tài liệu để trả lời.' },
+    { 404: 'Không tìm thấy nội dung liên quan để trả lời. Hãy tải tài liệu lên (và chờ lập chỉ mục xong) hoặc chọn tài liệu đã xử lý.' },
   )
   return {
     conversationId: data.conversation_id,
