@@ -34,22 +34,22 @@ export default function ArticleView() {
     URL.revokeObjectURL(url)
   }
 
-  const openPdf = (engine: 'typst' | 'html') => {
+  const openPdf = (columns: 1 | 2) => {
     if (!taskId) return
-    window.open(researchPdfUrl(taskId, { engine }), '_blank', 'noopener,noreferrer')
+    window.open(researchPdfUrl(taskId, { engine: 'html', columns }), '_blank', 'noopener,noreferrer')
   }
 
   return (
     <div className="article-view">
       <div className="article-toolbar scrollbar-thin">
-        <Tooltip title="PDF 2 cột chuẩn hội nghị (Typst). Lần đầu có thể mất vài giây để biên dịch.">
-          <button className="toolbar-btn primary" onClick={() => openPdf('typst')} disabled={!taskId || !hasReport}>
+        <Tooltip title="PDF hai cột. Bảng lớn, biểu đồ và sơ đồ trải ngang trang A4 để dễ đọc.">
+          <button className="toolbar-btn primary" onClick={() => openPdf(2)} disabled={!taskId || !hasReport}>
             <FileDown size={14} /> Xuất PDF
           </button>
         </Tooltip>
-        <Tooltip title="PDF 1 cột render từ HTML (Chromium) — dùng khi Typst lỗi với công thức phức tạp.">
-          <button className="toolbar-btn" onClick={() => openPdf('html')} disabled={!taskId || !hasReport}>
-            <FileText size={14} /> PDF (HTML)
+        <Tooltip title="Bản PDF một cột.">
+          <button className="toolbar-btn" onClick={() => openPdf(1)} disabled={!taskId || !hasReport}>
+            <FileText size={14} /> PDF 1 cột
           </button>
         </Tooltip>
         <button className="toolbar-btn" onClick={downloadMarkdown} disabled={!hasReport}>

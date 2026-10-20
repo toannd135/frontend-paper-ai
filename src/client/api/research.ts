@@ -121,7 +121,7 @@ export function deleteResearchTask(id: string): Promise<void> {
   return apiFetch<void>(`/research/${id}`, { method: 'DELETE' }, ResearchError)
 }
 
-/** URL mở PDF báo cáo (backend render Typst, fallback HTML). */
-export function researchPdfUrl(id: string, options: { engine?: 'typst' | 'html'; download?: boolean } = {}): string {
-  return `/api/research/${id}/pdf${toQuery({ engine: options.engine ?? 'typst', download: options.download ? 'true' : null })}`
+/** URL mở PDF báo cáo; mặc định dùng Chromium để giữ bảng, biểu đồ và công thức. */
+export function researchPdfUrl(id: string, options: { engine?: 'typst' | 'html'; columns?: 1 | 2; download?: boolean } = {}): string {
+  return `/api/research/${id}/pdf${toQuery({ engine: options.engine ?? 'html', columns: options.columns ?? 2, download: options.download ? 'true' : null })}`
 }

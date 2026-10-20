@@ -25,6 +25,23 @@ const RESEARCH_POLL_MS = 2500
 const TOP_SOURCES = 20
 const PAPER_POLL_MS = 1500
 const HISTORY_LIMIT = 100
+const ACTIVE_RESEARCH_KEY = 'paperai.activeResearchTask'
+
+function rememberResearch(id: string) {
+  try {
+    sessionStorage.setItem(ACTIVE_RESEARCH_KEY, id)
+  } catch {
+    // The saved server history remains available when browser storage is disabled.
+  }
+}
+
+function rememberedResearch(): string | null {
+  try {
+    return sessionStorage.getItem(ACTIVE_RESEARCH_KEY)
+  } catch {
+    return null
+  }
+}
 
 function errorMessage(err: unknown, fallback: string): string {
   return err instanceof ApiError ? err.message : fallback
@@ -75,14 +92,16 @@ export function useAppController() {
           createdAt: t.createdAt,
         })),
       })
+      return items
     } catch (err) {
       dispatch({ type: 'HISTORY_ERROR', message: errorMessage(err, 'Không tải được lịch sử nghiên cứu.') })
+      return []
     }
   }, [])
 
   useEffect(() => {
-    void refreshHistory()
-  }, [refreshHistory])
+    if (state.researchTaskId) rememberResearch(state.researchTaskId)
+  }, [state.researchTaskId])
 
   // ---------------------------------------------------------------- helpers
   const appendAiTypingThenText = useCallback(
@@ -252,6 +271,7 @@ export function useAppController() {
   // ---------------------------------------------------------------- actions
   const startNewResearch = useCallback(() => {
     cancelAllTimers()
+    rememberResearch('new')
     dispatch({ type: 'RESET' })
   }, [cancelAllTimers])
 
@@ -260,6 +280,7 @@ export function useAppController() {
       const trimmed = topic.trim()
       if (!trimmed) return
       cancelAllTimers()
+      rememberResearch('new')
       dispatch({ type: 'START_TOPIC', topic: trimmed, userMsgId: uid('u') })
       appendAiTypingThenText(
         'Tôi đã hiểu chủ đề nghiên cứu của bạn.\nĐể xây dựng một bài báo phù hợp hơn, tôi cần xác định thêm một vài thông tin.',
@@ -391,6 +412,7 @@ export function useAppController() {
   const startChatWithPaper = useCallback(
     (file: File) => {
       cancelAllTimers()
+      rememberResearch('new')
       dispatch({ type: 'START_CHAT', title: file.name })
       dispatch({
         type: 'ADD_MESSAGE',
@@ -409,8 +431,10 @@ export function useAppController() {
   const openResearchTask = useCallback(
     async (id: string) => {
       cancelAllTimers()
+      const session = sessionRef.current
       try {
         const task = await getResearchTask(id)
+        if (sessionRef.current !== session) return
         dispatch({
           type: 'LOAD_RESEARCH_TASK',
           id: task.id,
@@ -426,12 +450,27 @@ export function useAppController() {
         // Nguồn OpenAlex phục vụ panel Research Sources + Graph; không gọi LLM nên rẻ.
         void populateSourcesProgressively(task.question)
       } catch (err) {
+        if (sessionRef.current !== session) return
         dispatch({ type: 'RESET' })
         warn(`⚠ ${errorMessage(err, 'Không mở được phiên nghiên cứu.')}`)
       }
     },
     [cancelAllTimers, pollResearchTask, populateSourcesProgressively, warn],
   )
+
+  useEffect(() => {
+    let cancelled = false
+    const session = sessionRef.current
+    void (async () => {
+      const items = await refreshHistory()
+      if (cancelled || sessionRef.current !== session) return
+      const saved = rememberedResearch()
+      if (saved === 'new') return
+      const target = saved ?? items[0]?.id
+      if (target) await openResearchTask(target)
+    })()
+    return () => { cancelled = true }
+  }, [refreshHistory, openResearchTask])
 
   const removeResearchTask = useCallback(
     async (id: string) => {

@@ -175,3 +175,56 @@ test('shows a clear error bubble when backend is unreachable', async ({ page }) 
   await page.keyboard.press('Enter')
   await expect(page.locator('.bubble.ai.tone-error')).toContainText('Không thể kết nối', { timeout: 10_000 })
 })
+
+async function mockSavedResearch(page: Page, report = REPORT) {
+  await mockBackend(page)
+  const summary = {
+    id: TASK_ID, question: 'Saved research session', refined_question: null, status: 'done',
+    has_report: true, citation_count: 2, error: null, created_at: '2026-01-01T00:00:00Z',
+  }
+  await page.route('**/api/research?*', route => route.fulfill({
+    contentType: 'application/json', body: JSON.stringify({ items: [summary], total: 1 }),
+  }))
+  await page.route(`**/api/research/${TASK_ID}`, route => route.fulfill({
+    contentType: 'application/json', body: JSON.stringify({ ...summary, report, citations: CITATIONS }),
+  }))
+}
+
+test('saved research is recovered on initial load and survives reload', async ({ page }) => {
+  await mockSavedResearch(page)
+  await page.goto('/')
+  await expect(page.getByTestId('article-paper')).toBeVisible()
+  await expect(page.locator('.conv-item-row.active')).toContainText('Saved research session')
+  await page.reload()
+  await expect(page.getByTestId('article-paper')).toBeVisible()
+  await expect(page.locator('.article-title')).toContainText('DemoRAG')
+  await expect(page.locator('.article-references li')).toHaveCount(2)
+})
+
+test('new research stays new on reload and history can reopen the saved report', async ({ page }) => {
+  await mockSavedResearch(page)
+  await page.goto('/')
+  await expect(page.getByTestId('article-paper')).toBeVisible()
+  await page.getByRole('button', { name: 'Bài nghiên cứu mới' }).click()
+  await page.reload()
+  await expect(page.getByPlaceholder('Hãy mô tả chủ đề bạn muốn nghiên cứu...')).toBeVisible()
+  await page.locator('.conv-item', { hasText: 'Saved research session' }).click()
+  await expect(page.getByTestId('article-paper')).toBeVisible()
+})
+
+test('Mermaid renders math symbols and legacy grouped formulas in node and edge labels', async ({ page }) => {
+  const diagram = String.raw`graph TD
+    A["Visual $f_v$"] -->|"$\phi(i)$"| B["Score $\frac(x_(i))(\sqrt(n))$"]`
+  const report = REPORT.replace('## References', '```mermaid\n' + diagram + '\n```\n\n## References')
+  await mockSavedResearch(page, report)
+  await page.goto('/')
+  const graph = page.locator('.article-mermaid')
+  await expect(graph.locator('math')).toHaveCount(3, { timeout: 20_000 })
+  await expect(graph.locator('mfrac')).toHaveCount(1)
+  await expect(graph.locator('msqrt')).toHaveCount(1)
+  const labels = (await graph.locator('.nodeLabel, .edgeLabel').allTextContents()).join(' ')
+  expect(labels).not.toContain('$')
+  expect(labels).not.toContain('\\frac')
+  expect(labels).not.toContain('\\phi')
+  await expect(page.locator('.article-code-fallback')).toHaveCount(0)
+})

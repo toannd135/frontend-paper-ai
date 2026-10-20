@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from 'react'
+import { normalizeMermaidMath } from '../../lib/mermaidMath'
 
 /**
  * Render sơ đồ ```mermaid``` phía client. Thư viện mermaid nặng (~2MB) nên được nạp lười (dynamic import)
@@ -18,10 +19,12 @@ export default function MermaidDiagram({ code, index }: { code: string; index: n
           startOnLoad: false,
           theme: 'neutral',
           securityLevel: 'strict',
+          htmlLabels: true,
           fontFamily: 'Inter, system-ui, sans-serif',
-          flowchart: { htmlLabels: false, useMaxWidth: true },
+          flowchart: { htmlLabels: true, useMaxWidth: true, rankSpacing: 65 },
         })
-        const { svg: rendered } = await mermaid.render(`mermaid-${id}`, code)
+        const { svg: rendered } = await mermaid.render(`mermaid-${id}`, normalizeMermaidMath(code))
+        if (!cancelled) setError(null)
         if (!cancelled) setSvg(rendered)
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Không render được sơ đồ')
