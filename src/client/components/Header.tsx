@@ -1,4 +1,4 @@
-import { Menu, PanelLeft, Search, Share2, MoreHorizontal, Library } from 'lucide-react'
+import { Menu, PanelLeft, Library } from 'lucide-react'
 import type { ActiveTab, Stage } from '../../types'
 
 interface HeaderProps {
@@ -7,6 +7,7 @@ interface HeaderProps {
   stage: Stage
   activeTab: ActiveTab
   sourceCount: number
+  hasReport: boolean
   onOpenSidebarDrawer: () => void
   onToggleSidebarCollapse: () => void
   onSetActiveTab: (tab: ActiveTab) => void
@@ -19,13 +20,14 @@ export default function Header({
   stage,
   activeTab,
   sourceCount,
+  hasReport,
   onOpenSidebarDrawer,
   onToggleSidebarCollapse,
   onSetActiveTab,
   onOpenSourcesDrawer,
 }: HeaderProps) {
-  const showResearchTab = sourceCount > 0
-  const showArticleTab = stage === 'article'
+  const showResearchTab = sourceCount > 0 || hasReport
+  const showArticleTab = stage === 'article' || hasReport
   const showGraphTab = sourceCount > 0
   const showModeTabs = showResearchTab || showArticleTab || showGraphTab
 
@@ -50,9 +52,11 @@ export default function Header({
       </div>
 
       {showModeTabs && (
-        <div className="mode-tabs">
+        <div className="mode-tabs" role="tablist" aria-label="Chế độ xem">
           {showResearchTab && (
             <button
+              role="tab"
+              aria-selected={activeTab === 'research'}
               onClick={() => onSetActiveTab('research')}
               className={`mode-tab${activeTab === 'research' ? ' active' : ''}`}
             >
@@ -61,6 +65,8 @@ export default function Header({
           )}
           {showArticleTab && (
             <button
+              role="tab"
+              aria-selected={activeTab === 'article'}
               onClick={() => onSetActiveTab('article')}
               className={`mode-tab${activeTab === 'article' ? ' active' : ''}`}
             >
@@ -69,6 +75,8 @@ export default function Header({
           )}
           {showGraphTab && (
             <button
+              role="tab"
+              aria-selected={activeTab === 'graph'}
               onClick={() => onSetActiveTab('graph')}
               className={`mode-tab${activeTab === 'graph' ? ' active' : ''}`}
             >
@@ -79,19 +87,9 @@ export default function Header({
       )}
 
       <div className="app-header-right">
-        <button className="icon-btn hide-mobile">
-          <Search size={16} />
-        </button>
-        <button className="icon-btn hide-mobile">
-          <Share2 size={16} />
-        </button>
-        <button className="icon-btn hide-mobile">
-          <MoreHorizontal size={16} />
-        </button>
-        <button onClick={onOpenSourcesDrawer} className="sources-mobile-btn">
+        <button onClick={onOpenSourcesDrawer} className="sources-mobile-btn" aria-label="Mở Research Sources">
           <Library size={14} /> <span>{sourceCount}</span>
         </button>
-        <div className="header-avatar">NA</div>
       </div>
     </header>
   )

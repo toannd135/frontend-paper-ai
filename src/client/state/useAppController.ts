@@ -1,11 +1,18 @@
-import { useCallback, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useReducer, useRef } from 'react'
 import type { ActiveTab, ChatMessage, ClarificationAnswer, SourceFilter } from '../../types'
-import { generatingSteps, researchingSteps } from '../../data/mock'
-import { searchSources, SourceSearchError } from '../api/sources'
-import { answerClarification, createResearch, getResearchTask, ResearchError } from '../api/research'
-import { sendChat, ChatError } from '../api/chat'
-import { uploadPaper, getPaper, PaperUploadError } from '../api/papers'
-import { appReducer, initialState } from './appReducer'
+import { researchingSteps } from '../constants'
+import { ApiError } from '../api/http'
+import { searchSources } from '../api/sources'
+import {
+  answerClarification,
+  createResearch,
+  deleteResearchTask,
+  getResearchTask,
+  listResearchTasks,
+} from '../api/research'
+import { sendChat } from '../api/chat'
+import { uploadPaper, getPaper } from '../api/papers'
+import { appReducer, initialState, type SourceSort } from './appReducer'
 
 let counter = 0
 function uid(prefix: string) {
@@ -13,47 +20,133 @@ function uid(prefix: string) {
   return `${prefix}_${counter}`
 }
 
-const RESEARCH_POLL_MS = 1800
+const RESEARCH_POLL_MS = 2500
+// Panel chỉ hiển thị các nguồn liên quan nhất; agent vẫn tìm trên toàn bộ kho ở backend.
+const TOP_SOURCES = 20
 const PAPER_POLL_MS = 1500
+const HISTORY_LIMIT = 100
+const ACTIVE_RESEARCH_KEY = 'paperai.activeResearchTask'
+
+function rememberResearch(id: string) {
+  try {
+    sessionStorage.setItem(ACTIVE_RESEARCH_KEY, id)
+  } catch {
+    // The saved server history remains available when browser storage is disabled.
+  }
+}
+
+function rememberedResearch(): string | null {
+  try {
+    return sessionStorage.getItem(ACTIVE_RESEARCH_KEY)
+  } catch {
+    return null
+  }
+}
+
+function errorMessage(err: unknown, fallback: string): string {
+  return err instanceof ApiError ? err.message : fallback
+}
 
 export function useAppController() {
   const [state, dispatch] = useReducer(appReducer, initialState)
-  // keep a live snapshot for callbacks scheduled via setTimeout
+  // Snapshot "sống" cho các callback chạy sau setTimeout/await.
   const stateRef = useRef(state)
   stateRef.current = state
 
-  const appendAiTypingThenText = useCallback((text: string, cb?: () => void) => {
-    const id = uid('ai')
-    dispatch({ type: 'ADD_MESSAGE', message: { kind: 'ai-typing', id } })
-    setTimeout(() => {
-      dispatch({ type: 'REPLACE_TYPING', id, text })
-      if (cb) cb()
-    }, 650)
+  // Mọi timer đều đi qua schedule() để RESET/unmount huỷ được toàn bộ poll cũ,
+  // tránh việc một phiên nghiên cứu cũ ghi đè lên phiên mới.
+  const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
+  const sessionRef = useRef(0)
+
+  const schedule = useCallback((fn: () => void, ms: number) => {
+    const session = sessionRef.current
+    const handle = setTimeout(() => {
+      timersRef.current.delete(handle)
+      if (sessionRef.current === session) fn()
+    }, ms)
+    timersRef.current.add(handle)
+    return handle
   }, [])
 
-  const populateSourcesProgressively = useCallback(async () => {
-    const topic = stateRef.current.topic
+  const cancelAllTimers = useCallback(() => {
+    timersRef.current.forEach((h) => clearTimeout(h))
+    timersRef.current.clear()
+    sessionRef.current += 1
+  }, [])
+
+  useEffect(() => cancelAllTimers, [cancelAllTimers])
+
+  // ---------------------------------------------------------------- history
+  const refreshHistory = useCallback(async () => {
+    dispatch({ type: 'HISTORY_LOADING' })
     try {
-      const { sources, relations } = await searchSources(topic)
-      dispatch({ type: 'SET_SOURCE_RELATIONS', relations })
-      // Với ít nguồn, giữ hiệu ứng "xuất hiện từng cái" như cũ (260ms/nguồn) cho mượt.
-      // Với nhiều nguồn (vài trăm), gộp thành lô, mỗi lô cách nhau 200ms, để tổng thời
-      // gian hiển thị không phụ thuộc tuyến tính vào số lượng (khoảng 8s dù có bao nhiêu).
-      const batchSize = Math.max(1, Math.ceil(sources.length / 40))
-      const tickDelay = batchSize === 1 ? 260 : 200
-      let i = 0
-      const addBatch = () => {
-        if (i >= sources.length) return
-        sources.slice(i, i + batchSize).forEach((source) => dispatch({ type: 'ADD_SOURCE', source }))
-        i += batchSize
-        setTimeout(addBatch, tickDelay)
-      }
-      addBatch()
+      const { items } = await listResearchTasks({ limit: HISTORY_LIMIT })
+      dispatch({
+        type: 'SET_HISTORY',
+        items: items.map((t) => ({
+          id: t.id,
+          question: t.question,
+          status: t.status,
+          hasReport: t.hasReport,
+          citationCount: t.citationCount,
+          createdAt: t.createdAt,
+        })),
+      })
+      return items
     } catch (err) {
-      const message = err instanceof SourceSearchError ? err.message : 'Không tìm được nguồn từ OpenAlex.'
-      appendAiTypingThenText(`⚠ ${message}`)
+      dispatch({ type: 'HISTORY_ERROR', message: errorMessage(err, 'Không tải được lịch sử nghiên cứu.') })
+      return []
     }
-  }, [appendAiTypingThenText])
+  }, [])
+
+  useEffect(() => {
+    if (state.researchTaskId) rememberResearch(state.researchTaskId)
+  }, [state.researchTaskId])
+
+  // ---------------------------------------------------------------- helpers
+  const appendAiTypingThenText = useCallback(
+    (text: string, cb?: () => void, tone?: 'info' | 'error' | 'success') => {
+      const id = uid('ai')
+      dispatch({ type: 'ADD_MESSAGE', message: { kind: 'ai-typing', id } })
+      schedule(() => {
+        dispatch({ type: 'REPLACE_TYPING', id, text, tone })
+        if (cb) cb()
+      }, 650)
+    },
+    [schedule],
+  )
+
+  const warn = useCallback(
+    (text: string) => appendAiTypingThenText(text, undefined, 'error'),
+    [appendAiTypingThenText],
+  )
+
+  const populateSourcesProgressively = useCallback(
+    async (query: string) => {
+      try {
+        const found = await searchSources(query)
+        // Giữ TOP_SOURCES bài liên quan nhất và chỉ các quan hệ nằm trọn trong tập đó.
+        const sources = [...found.sources].sort((a, b) => b.relevance - a.relevance).slice(0, TOP_SOURCES)
+        const keptIds = new Set(sources.map((s) => s.id))
+        const relations = found.relations.filter((r) => keptIds.has(r.source) && keptIds.has(r.target))
+        dispatch({ type: 'SET_SOURCE_RELATIONS', relations })
+        // Ít nguồn: hiện từng cái cho mượt; nhiều nguồn: gộp lô để tổng thời gian ~8s bất kể số lượng.
+        const batchSize = Math.max(1, Math.ceil(sources.length / 40))
+        const tickDelay = batchSize === 1 ? 260 : 200
+        let i = 0
+        const addBatch = () => {
+          if (i >= sources.length) return
+          dispatch({ type: 'ADD_SOURCES', sources: sources.slice(i, i + batchSize) })
+          i += batchSize
+          schedule(addBatch, tickDelay)
+        }
+        addBatch()
+      } catch (err) {
+        warn(`⚠ ${errorMessage(err, 'Không tìm được nguồn từ OpenAlex.')}`)
+      }
+    },
+    [schedule, warn],
+  )
 
   const onArticleReady = useCallback(() => {
     dispatch({ type: 'SET_STAGE', stage: 'article' })
@@ -63,101 +156,61 @@ export function useAppController() {
       message: {
         kind: 'ai-text',
         id: uid('ai'),
-        text: '✓ Bài báo của bạn đã sẵn sàng. Bạn có thể xem, chỉnh sửa hoặc tiếp tục trò chuyện để tinh chỉnh nội dung.',
+        text: '✓ Bài báo đã sẵn sàng ở tab Article. Bạn có thể xuất PDF hoặc tiếp tục hỏi đáp tại đây.',
+        tone: 'success',
       },
     })
     dispatch({ type: 'SET_ACTIVE_TAB', tab: 'article' })
   }, [])
-
-  const runCosmeticProgress = useCallback(
-    (progressId: string, steps: string[], onDone: () => void) => {
-      let i = 0
-      const next = () => {
-        if (i >= steps.length) {
-          dispatch({ type: 'FINISH_PROGRESS', id: progressId })
-          setTimeout(onDone, 400)
-          return
-        }
-        dispatch({ type: 'ADVANCE_PROGRESS', id: progressId })
-        i += 1
-        setTimeout(next, 500 + Math.random() * 300)
-      }
-      next()
-    },
-    [],
-  )
 
   const onResearchComplete = useCallback(() => {
     dispatch({ type: 'SET_STAGE', stage: 'research-complete' })
     const sources = stateRef.current.sources
     const citationCount = stateRef.current.citations.length
     dispatch({ type: 'SET_HEADER', subtitle: `${sources.length} nguồn tham khảo đã tìm thấy` })
-    const top8 = [...sources].sort((a, b) => b.relevance - a.relevance).slice(0, 8)
-    dispatch({ type: 'AUTO_SELECT', ids: top8.map((p) => p.id) })
+    void refreshHistory()
 
     appendAiTypingThenText(
       citationCount > 0
-        ? `✓ Tôi đã tổng hợp xong báo cáo nghiên cứu, sử dụng ${citationCount} trích dẫn từ kho tài liệu đã lập chỉ mục.\nBạn có thể xem toàn bộ nguồn học thuật liên quan ở Research Sources bên phải.`
-        : `✓ Tôi đã tổng hợp xong báo cáo nghiên cứu.\nLưu ý: kho tài liệu nội bộ hiện chưa có trích dẫn phù hợp — hãy tải lên paper liên quan để cải thiện chất lượng báo cáo.`,
+        ? `✓ Đã tổng hợp xong báo cáo nghiên cứu với ${citationCount} trích dẫn từ kho tài liệu đã lập chỉ mục và OpenAlex.\nCác nguồn học thuật liên quan nằm ở Research Sources bên phải.`
+        : `✓ Đã tổng hợp xong báo cáo nghiên cứu.\nLưu ý: chưa có trích dẫn nào được gắn — hãy tải lên paper liên quan để cải thiện chất lượng.`,
       () => {
         dispatch({ type: 'ADD_MESSAGE', message: { kind: 'generate-button', id: uid('gen'), clicked: false } })
       },
+      'success',
     )
-  }, [appendAiTypingThenText])
+  }, [appendAiTypingThenText, refreshHistory])
 
   const pollResearchTask = useCallback(
-    (taskId: string, progressId: string) => {
+    (taskId: string, progressId: string | null) => {
       const tick = async () => {
         try {
           const task = await getResearchTask(taskId)
           if (task.status === 'done') {
             dispatch({ type: 'SET_RESEARCH_RESULT', report: task.report ?? '', citations: task.citations })
-            dispatch({ type: 'FINISH_PROGRESS', id: progressId })
-            setTimeout(onResearchComplete, 300)
+            if (progressId) dispatch({ type: 'FINISH_PROGRESS', id: progressId })
+            schedule(onResearchComplete, 300)
             return
           }
           if (task.status === 'failed') {
             dispatch({ type: 'SET_RESEARCH_ERROR' })
-            dispatch({ type: 'FINISH_PROGRESS', id: progressId })
-            appendAiTypingThenText(`⚠ Nghiên cứu thất bại: ${task.error ?? 'lỗi không xác định'}.`)
+            if (progressId) dispatch({ type: 'FINISH_PROGRESS', id: progressId })
+            dispatch({ type: 'SET_HEADER', subtitle: 'Nghiên cứu thất bại' })
+            warn(`⚠ Nghiên cứu thất bại: ${task.error ?? 'lỗi không xác định'}.`)
+            void refreshHistory()
             return
           }
-          dispatch({ type: 'ADVANCE_PROGRESS', id: progressId })
-          setTimeout(tick, RESEARCH_POLL_MS)
+          if (progressId) dispatch({ type: 'ADVANCE_PROGRESS', id: progressId })
+          schedule(tick, RESEARCH_POLL_MS)
         } catch (err) {
-          const message = err instanceof ResearchError ? err.message : 'Không thể kiểm tra trạng thái nghiên cứu.'
           dispatch({ type: 'SET_RESEARCH_ERROR' })
-          dispatch({ type: 'FINISH_PROGRESS', id: progressId })
-          appendAiTypingThenText(`⚠ ${message}`)
+          if (progressId) dispatch({ type: 'FINISH_PROGRESS', id: progressId })
+          warn(`⚠ ${errorMessage(err, 'Không thể kiểm tra trạng thái nghiên cứu.')}`)
         }
       }
-      setTimeout(tick, RESEARCH_POLL_MS)
+      schedule(tick, RESEARCH_POLL_MS)
     },
-    [appendAiTypingThenText, onResearchComplete],
-  )
-
-  const beginArticleGeneration = useCallback(
-    (btnId: string) => {
-      dispatch({ type: 'MARK_GENERATE_CLICKED', id: btnId })
-      dispatch({ type: 'SET_STAGE', stage: 'generating' })
-      dispatch({ type: 'SET_HEADER', subtitle: 'Đang tổng hợp bài báo...' })
-      dispatch({ type: 'ADD_MESSAGE', message: { kind: 'ai-text', id: uid('ai'), text: 'Đang tổng hợp bài báo...' } })
-      const progressId = uid('progress')
-      dispatch({
-        type: 'ADD_MESSAGE',
-        message: {
-          kind: 'progress',
-          id: progressId,
-          progressKey: 'generating',
-          steps: generatingSteps,
-          activeIndex: -1,
-          doneCount: 0,
-          finished: false,
-        },
-      })
-      runCosmeticProgress(progressId, generatingSteps, onArticleReady)
-    },
-    [onArticleReady, runCosmeticProgress],
+    [onResearchComplete, refreshHistory, schedule, warn],
   )
 
   const beginResearch = useCallback(() => {
@@ -166,7 +219,14 @@ export function useAppController() {
     dispatch({ type: 'SET_STAGE', stage: 'researching' })
     dispatch({ type: 'SET_SOURCES_PANEL_OPEN', open: true })
     dispatch({ type: 'SET_HEADER', subtitle: 'Đang nghiên cứu chủ đề...' })
-    dispatch({ type: 'ADD_MESSAGE', message: { kind: 'ai-text', id: uid('ai'), text: 'Đang nghiên cứu chủ đề của bạn...' } })
+    dispatch({
+      type: 'ADD_MESSAGE',
+      message: {
+        kind: 'ai-text',
+        id: uid('ai'),
+        text: 'Đang nghiên cứu chủ đề của bạn. Quá trình gồm nhiều lượt gọi mô hình ngôn ngữ nên có thể mất vài phút.',
+      },
+    })
     const progressId = uid('progress')
     dispatch({
       type: 'ADD_MESSAGE',
@@ -180,9 +240,10 @@ export function useAppController() {
         finished: false,
       },
     })
-    void populateSourcesProgressively()
+    void populateSourcesProgressively(stateRef.current.topic)
     pollResearchTask(taskId, progressId)
-  }, [pollResearchTask, populateSourcesProgressively])
+    void refreshHistory()
+  }, [pollResearchTask, populateSourcesProgressively, refreshHistory])
 
   const askClarify = useCallback((index: number) => {
     const question = stateRef.current.clarificationQuestions[index]
@@ -200,20 +261,27 @@ export function useAppController() {
     })
   }, [])
 
-  const showSpecification = useCallback(() => {
-    dispatch({ type: 'ADD_MESSAGE', message: { kind: 'specification', id: uid('spec') } })
-  }, [])
-
   const goToSpecification = useCallback(() => {
     dispatch({ type: 'SET_STAGE', stage: 'specification' })
-    appendAiTypingThenText('Cảm ơn bạn! Đây là bản đặc tả nghiên cứu tôi đã tổng hợp:', showSpecification)
-  }, [appendAiTypingThenText, showSpecification])
+    appendAiTypingThenText('Cảm ơn bạn! Đây là bản đặc tả nghiên cứu tôi đã tổng hợp:', () => {
+      dispatch({ type: 'ADD_MESSAGE', message: { kind: 'specification', id: uid('spec') } })
+    })
+  }, [appendAiTypingThenText])
+
+  // ---------------------------------------------------------------- actions
+  const startNewResearch = useCallback(() => {
+    cancelAllTimers()
+    rememberResearch('new')
+    dispatch({ type: 'RESET' })
+  }, [cancelAllTimers])
 
   const submitTopic = useCallback(
     (topic: string) => {
       const trimmed = topic.trim()
       if (!trimmed) return
-      dispatch({ type: 'START_TOPIC', topic: trimmed, userMsgId: uid('u'), typingId: uid('ai') })
+      cancelAllTimers()
+      rememberResearch('new')
+      dispatch({ type: 'START_TOPIC', topic: trimmed, userMsgId: uid('u') })
       appendAiTypingThenText(
         'Tôi đã hiểu chủ đề nghiên cứu của bạn.\nĐể xây dựng một bài báo phù hợp hơn, tôi cần xác định thêm một vài thông tin.',
         async () => {
@@ -221,19 +289,18 @@ export function useAppController() {
             const result = await createResearch(trimmed)
             if (result.kind === 'clarification') {
               dispatch({ type: 'SET_CLARIFICATION_QUESTIONS', questions: result.questions })
-              setTimeout(() => askClarify(0), 400)
+              schedule(() => askClarify(0), 400)
             } else {
               dispatch({ type: 'SET_RESEARCH_TASK', id: result.task.id })
-              setTimeout(goToSpecification, 400)
+              schedule(goToSpecification, 400)
             }
           } catch (err) {
-            const message = err instanceof ResearchError ? err.message : 'Không thể bắt đầu nghiên cứu.'
-            appendAiTypingThenText(`⚠ ${message}`)
+            warn(`⚠ ${errorMessage(err, 'Không thể bắt đầu nghiên cứu.')}`)
           }
         },
       )
     },
-    [appendAiTypingThenText, askClarify, goToSpecification],
+    [appendAiTypingThenText, askClarify, cancelAllTimers, goToSpecification, schedule, warn],
   )
 
   const answerClarify = useCallback(
@@ -242,11 +309,11 @@ export function useAppController() {
 
       const nextIndex = stateRef.current.clarificationIndex + 1
       if (nextIndex < stateRef.current.clarificationQuestions.length) {
-        setTimeout(() => askClarify(nextIndex), 500)
+        schedule(() => askClarify(nextIndex), 500)
         return
       }
 
-      setTimeout(async () => {
+      schedule(async () => {
         try {
           const answers = { ...stateRef.current.clarificationAnswers }
           const result = await answerClarification(stateRef.current.topic, answers)
@@ -261,127 +328,180 @@ export function useAppController() {
           dispatch({ type: 'SET_RESEARCH_TASK', id: result.task.id })
           goToSpecification()
         } catch (err) {
-          const message = err instanceof ResearchError ? err.message : 'Không thể bắt đầu nghiên cứu.'
-          appendAiTypingThenText(`⚠ ${message}`)
+          warn(`⚠ ${errorMessage(err, 'Không thể bắt đầu nghiên cứu.')}`)
         }
       }, 450)
     },
-    [appendAiTypingThenText, askClarify, goToSpecification],
+    [askClarify, goToSpecification, schedule, warn],
   )
 
-  const sendChatMessage = useCallback(
-    (text: string, model?: string) => {
-      const trimmed = text.trim()
-      if (!trimmed) return
-      dispatch({ type: 'ADD_MESSAGE', message: { kind: 'user', id: uid('u'), text: trimmed } })
-      const id = uid('ai')
-      dispatch({ type: 'ADD_MESSAGE', message: { kind: 'ai-typing', id } })
+  const sendChatMessage = useCallback((text: string, model?: string) => {
+    const trimmed = text.trim()
+    if (!trimmed) return
+    dispatch({ type: 'ADD_MESSAGE', message: { kind: 'user', id: uid('u'), text: trimmed } })
+    const id = uid('ai')
+    dispatch({ type: 'ADD_MESSAGE', message: { kind: 'ai-typing', id } })
+    void (async () => {
+      try {
+        const result = await sendChat(trimmed, {
+          paperId: stateRef.current.paperId,
+          conversationId: stateRef.current.conversationId,
+          model,
+        })
+        dispatch({ type: 'SET_CONVERSATION_ID', id: result.conversationId })
+        dispatch({ type: 'REPLACE_TYPING', id, text: result.answer, citations: result.citations })
+      } catch (err) {
+        dispatch({
+          type: 'REPLACE_TYPING',
+          id,
+          text: `⚠ ${errorMessage(err, 'Không thể liên hệ máy chủ paperai.')}`,
+          tone: 'error',
+        })
+      }
+    })()
+  }, [])
+
+  const uploadPaperFile = useCallback(
+    (file: File) => {
+      const msgId = uid('paper')
+      dispatch({
+        type: 'ADD_MESSAGE',
+        message: { kind: 'paper-upload', id: msgId, filename: file.name, status: 'pending', error: null },
+      })
+
       void (async () => {
         try {
-          const result = await sendChat(trimmed, {
-            paperId: stateRef.current.paperId,
-            conversationId: stateRef.current.conversationId,
-            model,
-          })
-          dispatch({ type: 'SET_CONVERSATION_ID', id: result.conversationId })
-          dispatch({ type: 'REPLACE_TYPING', id, text: result.answer, citations: result.citations })
+          const info = await uploadPaper(file)
+          dispatch({ type: 'SET_PAPER_ID', id: info.id })
+          dispatch({ type: 'UPDATE_PAPER_UPLOAD', id: msgId, status: info.status, error: null })
+
+          const poll = async () => {
+            try {
+              const status = await getPaper(info.id)
+              dispatch({ type: 'UPDATE_PAPER_UPLOAD', id: msgId, status: status.status, error: status.error })
+              if (status.status === 'done') {
+                appendAiTypingThenText(
+                  `✓ Đã lập chỉ mục "${status.filename}". Câu hỏi tiếp theo sẽ được trả lời dựa trên tài liệu này.`,
+                  undefined,
+                  'success',
+                )
+                return
+              }
+              if (status.status === 'failed') {
+                warn(`⚠ Xử lý tài liệu thất bại: ${status.error ?? 'lỗi không xác định'}.`)
+                return
+              }
+              schedule(poll, PAPER_POLL_MS)
+            } catch (err) {
+              const message = errorMessage(err, 'Không thể kiểm tra trạng thái tài liệu.')
+              dispatch({ type: 'UPDATE_PAPER_UPLOAD', id: msgId, status: 'failed', error: message })
+            }
+          }
+          schedule(poll, PAPER_POLL_MS)
         } catch (err) {
-          const message = err instanceof ChatError ? err.message : 'Không thể liên hệ máy chủ paperai.'
-          dispatch({ type: 'REPLACE_TYPING', id, text: `⚠ ${message}` })
+          const message = errorMessage(err, 'Không thể tải lên tài liệu.')
+          dispatch({ type: 'UPDATE_PAPER_UPLOAD', id: msgId, status: 'failed', error: message })
+          warn(`⚠ ${message}`)
         }
       })()
     },
-    [],
+    [appendAiTypingThenText, schedule, warn],
   )
 
-  const uploadPaperFile = useCallback((file: File) => {
-    const msgId = uid('paper')
-    dispatch({
-      type: 'ADD_MESSAGE',
-      message: { kind: 'paper-upload', id: msgId, filename: file.name, status: 'pending', error: null },
-    })
-
-    void (async () => {
-      try {
-        const info = await uploadPaper(file)
-        dispatch({ type: 'SET_PAPER_ID', id: info.id })
-        dispatch({ type: 'UPDATE_PAPER_UPLOAD', id: msgId, status: info.status, error: null })
-
-        const poll = async () => {
-          try {
-            const status = await getPaper(info.id)
-            dispatch({ type: 'UPDATE_PAPER_UPLOAD', id: msgId, status: status.status, error: status.error })
-            if (status.status === 'done') {
-              appendAiTypingThenText(`✓ Đã xử lý xong "${status.filename}". Bạn có thể hỏi PaperAI về nội dung tài liệu này.`)
-              return
-            }
-            if (status.status === 'failed') {
-              appendAiTypingThenText(`⚠ Xử lý tài liệu thất bại: ${status.error ?? 'lỗi không xác định'}.`)
-              return
-            }
-            setTimeout(poll, PAPER_POLL_MS)
-          } catch (err) {
-            const message = err instanceof PaperUploadError ? err.message : 'Không thể kiểm tra trạng thái tài liệu.'
-            dispatch({ type: 'UPDATE_PAPER_UPLOAD', id: msgId, status: 'failed', error: message })
-          }
-        }
-        setTimeout(poll, PAPER_POLL_MS)
-      } catch (err) {
-        const message = err instanceof PaperUploadError ? err.message : 'Không thể tải lên tài liệu.'
-        dispatch({ type: 'UPDATE_PAPER_UPLOAD', id: msgId, status: 'failed', error: message })
-      }
-    })()
-  }, [appendAiTypingThenText])
-
-  const toggleSelectSource = useCallback((id: string) => {
-    dispatch({ type: 'TOGGLE_SELECT_SOURCE', id })
-  }, [])
-
-  const setSourceFilter = useCallback((filter: SourceFilter) => {
-    dispatch({ type: 'SET_SOURCE_FILTER', filter })
-  }, [])
-  const setSourceSearch = useCallback((value: string) => {
-    dispatch({ type: 'SET_SOURCE_SEARCH', value })
-  }, [])
-  const setSourceSort = useCallback((value: 'relevance' | 'year' | 'citation') => {
-    dispatch({ type: 'SET_SOURCE_SORT', value })
-  }, [])
-
-  const openPaperModal = useCallback((id: string) => {
-    dispatch({ type: 'OPEN_MODAL', id })
-  }, [])
-  const closePaperModal = useCallback(() => {
-    dispatch({ type: 'CLOSE_MODAL' })
-  }, [])
-
-  const setActiveTab = useCallback((tab: ActiveTab) => {
-    dispatch({ type: 'SET_ACTIVE_TAB', tab })
-  }, [])
-
-  const toggleSidebarCollapsed = useCallback(() => {
-    dispatch({ type: 'TOGGLE_SIDEBAR_COLLAPSED' })
-  }, [])
-  const toggleSourcesPanel = useCallback(() => {
-    dispatch({ type: 'TOGGLE_SOURCES_PANEL' })
-  }, [])
-
-  const useSuggestion = useCallback(
-    (text: string) => {
-      submitTopic(text)
+  /** Chế độ hỏi-đáp trực tiếp với 1 PDF: không chạy research agent. */
+  const startChatWithPaper = useCallback(
+    (file: File) => {
+      cancelAllTimers()
+      rememberResearch('new')
+      dispatch({ type: 'START_CHAT', title: file.name })
+      dispatch({
+        type: 'ADD_MESSAGE',
+        message: {
+          kind: 'ai-text',
+          id: uid('ai'),
+          text: 'Đang tải và lập chỉ mục tài liệu. Khi hoàn tất, bạn có thể hỏi bất kỳ điều gì về nội dung PDF này.',
+        },
+      })
+      uploadPaperFile(file)
     },
-    [submitTopic],
+    [cancelAllTimers, uploadPaperFile],
   )
 
-  const beginResearchFromSpec = useCallback(() => {
-    beginResearch()
-  }, [beginResearch])
+  /** Mở lại một phiên nghiên cứu từ lịch sử (sidebar). */
+  const openResearchTask = useCallback(
+    async (id: string) => {
+      cancelAllTimers()
+      const session = sessionRef.current
+      try {
+        const task = await getResearchTask(id)
+        if (sessionRef.current !== session) return
+        dispatch({
+          type: 'LOAD_RESEARCH_TASK',
+          id: task.id,
+          question: task.question,
+          report: task.report,
+          citations: task.citations,
+          status: task.status,
+          summaryMsgId: uid('ai'),
+        })
+        if (task.status === 'pending' || task.status === 'processing') {
+          pollResearchTask(task.id, null)
+        }
+        // Nguồn OpenAlex phục vụ panel Research Sources + Graph; không gọi LLM nên rẻ.
+        void populateSourcesProgressively(task.question)
+      } catch (err) {
+        if (sessionRef.current !== session) return
+        dispatch({ type: 'RESET' })
+        warn(`⚠ ${errorMessage(err, 'Không mở được phiên nghiên cứu.')}`)
+      }
+    },
+    [cancelAllTimers, pollResearchTask, populateSourcesProgressively, warn],
+  )
+
+  useEffect(() => {
+    let cancelled = false
+    const session = sessionRef.current
+    void (async () => {
+      const items = await refreshHistory()
+      if (cancelled || sessionRef.current !== session) return
+      const saved = rememberedResearch()
+      if (saved === 'new') return
+      const target = saved ?? items[0]?.id
+      if (target) await openResearchTask(target)
+    })()
+    return () => { cancelled = true }
+  }, [refreshHistory, openResearchTask])
+
+  const removeResearchTask = useCallback(
+    async (id: string) => {
+      try {
+        await deleteResearchTask(id)
+        dispatch({ type: 'REMOVE_HISTORY_ITEM', id })
+        if (stateRef.current.researchTaskId === id) startNewResearch()
+      } catch (err) {
+        dispatch({ type: 'HISTORY_ERROR', message: errorMessage(err, 'Không xoá được phiên nghiên cứu.') })
+      }
+    },
+    [startNewResearch],
+  )
 
   const beginArticleFromButton = useCallback(
     (btnId: string) => {
-      beginArticleGeneration(btnId)
+      dispatch({ type: 'MARK_GENERATE_CLICKED', id: btnId })
+      onArticleReady()
     },
-    [beginArticleGeneration],
+    [onArticleReady],
   )
+
+  const setSourceFilter = useCallback((filter: SourceFilter) => dispatch({ type: 'SET_SOURCE_FILTER', filter }), [])
+  const setSourceSearch = useCallback((value: string) => dispatch({ type: 'SET_SOURCE_SEARCH', value }), [])
+  const setSourceSort = useCallback((value: SourceSort) => dispatch({ type: 'SET_SOURCE_SORT', value }), [])
+  const openPaperModal = useCallback((id: string) => dispatch({ type: 'OPEN_MODAL', id }), [])
+  const closePaperModal = useCallback(() => dispatch({ type: 'CLOSE_MODAL' }), [])
+  const setActiveTab = useCallback((tab: ActiveTab) => dispatch({ type: 'SET_ACTIVE_TAB', tab }), [])
+  const toggleSidebarCollapsed = useCallback(() => dispatch({ type: 'TOGGLE_SIDEBAR_COLLAPSED' }), [])
+  const toggleSourcesPanel = useCallback(() => dispatch({ type: 'TOGGLE_SOURCES_PANEL' }), [])
+  const beginResearchFromSpec = useCallback(() => beginResearch(), [beginResearch])
 
   const chatMessages: ChatMessage[] = state.messages
 
@@ -395,11 +515,14 @@ export function useAppController() {
     chatMessages,
     clarificationAnswerList,
     submitTopic,
-    useSuggestion,
+    startNewResearch,
+    startChatWithPaper,
+    openResearchTask,
+    removeResearchTask,
+    refreshHistory,
     answerClarify,
     beginResearchFromSpec,
     beginArticleFromButton,
-    toggleSelectSource,
     setSourceFilter,
     setSourceSearch,
     setSourceSort,
