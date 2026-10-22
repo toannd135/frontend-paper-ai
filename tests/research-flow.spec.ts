@@ -102,7 +102,7 @@ async function mockBackend(page: Page) {
 
 async function runResearch(page: Page) {
   await mockBackend(page)
-  await page.goto('/')
+  await page.goto('/workspace')
 
   await page.getByPlaceholder('Hãy mô tả chủ đề bạn muốn nghiên cứu...').fill('Ứng dụng RAG trong chăm sóc khách hàng')
   await page.keyboard.press('Enter')
@@ -170,7 +170,7 @@ test('research sources panel and graph tab are populated from OpenAlex mock', as
 test('shows a clear error bubble when backend is unreachable', async ({ page }) => {
   await page.route('**/api/research?*', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{"items":[],"total":0}' }))
   await page.route('**/api/research/', (route) => route.abort('connectionrefused'))
-  await page.goto('/')
+  await page.goto('/workspace')
   await page.getByPlaceholder('Hãy mô tả chủ đề bạn muốn nghiên cứu...').fill('Một chủ đề bất kỳ')
   await page.keyboard.press('Enter')
   await expect(page.locator('.bubble.ai.tone-error')).toContainText('Không thể kết nối', { timeout: 10_000 })

@@ -9,7 +9,7 @@ import ArticleView from './components/article/ArticleView'
 import SourcesPanel from './components/SourcesPanel'
 import PaperModal from './components/PaperModal'
 
-// 3d-force-graph + three nặng ~1MB: chỉ tải khi người dùng mở tab Graph.
+// force-graph: chỉ tải khi người dùng mở tab Graph.
 const GraphView = lazy(() => import('./components/graph/GraphView'))
 import './ClientApp.css'
 
@@ -27,6 +27,7 @@ function Shell() {
   } = useApp()
   const [sidebarDrawerOpen, setSidebarDrawerOpen] = useState(false)
   const [sourcesDrawerOpen, setSourcesDrawerOpen] = useState(false)
+
 
   const selectTask = (id: string) => {
     void openResearchTask(id)
@@ -81,7 +82,7 @@ function Shell() {
             ) : state.activeTab === 'article' ? (
               <ArticleView />
             ) : state.activeTab === 'graph' ? (
-              <Suspense fallback={<div className="lazy-fallback">Đang tải sơ đồ 3D…</div>}>
+              <Suspense fallback={<div className="lazy-fallback">Đang tải sơ đồ…</div>}>
                 <GraphView />
               </Suspense>
             ) : (

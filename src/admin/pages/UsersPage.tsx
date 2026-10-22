@@ -1,76 +1,98 @@
-import { Table, Tag, Button, Select } from 'antd'
-import { UserPlus } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { App, Table, Tag, Select, Switch } from 'antd'
 import PageHeader from '../components/PageHeader'
-import UnimplementedBanner from '../components/UnimplementedBanner'
-import { adminUsers, roleDefs, type AdminUser, type UserRole, type UserStatus } from '../data/mockAdmin'
+import ApiErrorBanner from '../components/ApiErrorBanner'
+import { listUsers, updateUser, type AuthUser, type UserRole } from '../../auth/authApi'
+import { useAuth } from '../../auth/AuthContext'
 
-const STATUS_MAP: Record<UserStatus, { color: string; label: string }> = {
-  active: { color: 'success', label: 'Hoạt động' },
-  invited: { color: 'gold', label: 'Đã mời' },
-  suspended: { color: 'error', label: 'Tạm khoá' },
-}
+const ROLE_OPTIONS: { value: UserRole; label: string }[] = [
+  { value: 'admin', label: 'Quản trị viên' },
+  { value: 'user', label: 'Người dùng' },
+]
 
 export default function UsersPage() {
+  const { message } = App.useApp()
+  const { user: me } = useAuth()
+  const [users, setUsers] = useState<AuthUser[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const reload = useCallback(async () => {
+    setLoading(true)
+    try {
+      setUsers(await listUsers())
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không tải được danh sách người dùng.')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void reload()
+  }, [reload])
+
+  const change = async (id: string, patch: { role?: UserRole; is_active?: boolean }) => {
+    try {
+      const updated = await updateUser(id, patch)
+      setUsers((prev) => prev.map((u) => (u.id === id ? updated : u)))
+    } catch (err) {
+      void message.error(err instanceof Error ? err.message : 'Không cập nhật được người dùng.')
+      void reload()
+    }
+  }
+
   return (
     <div>
-      <PageHeader
-        title="Người dùng"
-        description="Quản lý tài khoản, vai trò và trạng thái truy cập hệ thống."
-        extra={
-          <Button type="primary" icon={<UserPlus size={14} style={{ marginRight: 4 }} />}>
-            Mời người dùng
-          </Button>
-        }
-      />
-
-      <UnimplementedBanner>
-        Backend hiện <strong>không có bảng users, không có auth/JWT và không có route quản lý user</strong>. Papers,
-        hội thoại và research task chưa gắn với chủ sở hữu. Dữ liệu dưới đây là <strong>mock</strong> minh hoạ
-        information architecture — cần xây auth + user CRUD trước khi màn hình này hoạt động thật.
-      </UnimplementedBanner>
-
+      <PageHeader title="Người dùng" description="Quản lý tài khoản, vai trò và trạng thái truy cập hệ thống." />
+      <ApiErrorBanner error={error} onRetry={() => void reload()} />
       <div className="admin-card">
         <Table
           rowKey="id"
-          dataSource={adminUsers}
+          loading={loading}
+          dataSource={users}
           pagination={false}
           columns={[
             {
               title: 'Người dùng',
-              dataIndex: 'name',
-              render: (v: string, r: AdminUser) => (
+              render: (_: unknown, u: AuthUser) => (
                 <div>
-                  <p style={{ margin: 0, fontWeight: 500 }}>{v}</p>
-                  <p style={{ margin: '2px 0 0', fontSize: 11.5, color: 'var(--color-ink-muted)' }}>{r.email}</p>
+                  <p style={{ margin: 0, fontWeight: 500 }}>{u.full_name || u.email}</p>
+                  <p style={{ margin: '2px 0 0', fontSize: 11.5, color: 'var(--color-ink-muted)' }}>{u.email}</p>
                 </div>
               ),
             },
             {
               title: 'Vai trò',
               dataIndex: 'role',
-              width: 160,
-              render: (role: UserRole) => (
+              width: 180,
+              render: (role: UserRole, u: AuthUser) => (
                 <Select
                   size="small"
                   value={role}
-                  variant="borderless"
-                  style={{ width: 130 }}
-                  options={roleDefs.map((r) => ({ value: r.key, label: r.label }))}
+                  style={{ width: 150 }}
+                  disabled={u.id === me?.id}
+                  options={ROLE_OPTIONS}
+                  onChange={(value) => void change(u.id, { role: value })}
                 />
               ),
             },
             {
               title: 'Trạng thái',
-              dataIndex: 'status',
-              width: 120,
-              render: (s: UserStatus) => <Tag color={STATUS_MAP[s].color}>{STATUS_MAP[s].label}</Tag>,
-            },
-            { title: 'Tài liệu đã tải', dataIndex: 'papersUploaded', width: 130 },
-            {
-              title: 'Tham gia',
-              dataIndex: 'joinedAt',
-              width: 130,
-              render: (v: string) => new Date(v).toLocaleDateString('vi-VN'),
+              dataIndex: 'is_active',
+              width: 170,
+              render: (active: boolean, u: AuthUser) => (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <Switch
+                    size="small"
+                    checked={active}
+                    disabled={u.id === me?.id}
+                    onChange={(checked) => void change(u.id, { is_active: checked })}
+                  />
+                  <Tag color={active ? 'success' : 'error'}>{active ? 'Hoạt động' : 'Đã khoá'}</Tag>
+                </span>
+              ),
             },
           ]}
         />

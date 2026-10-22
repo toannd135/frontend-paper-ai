@@ -40,6 +40,7 @@ export interface ConversationSummary {
 export interface ConversationMessage {
   role: 'user' | 'assistant' | string
   content: string
+  citations?: Citation[]
   createdAt: string
 }
 
@@ -61,7 +62,12 @@ export function fetchChatModels(): Promise<ChatModel[]> {
 
 export async function sendChat(
   question: string,
-  options: { paperId?: string | null; conversationId?: string | null; model?: string | null } = {},
+  options: {
+    paperId?: string | null
+    conversationId?: string | null
+    researchTaskId?: string | null
+    model?: string | null
+  } = {},
 ): Promise<ChatResult> {
   const data = await postJson<ApiChatResponse>(
     '/chat',
@@ -69,6 +75,7 @@ export async function sendChat(
       question,
       paper_id: options.paperId ?? null,
       conversation_id: options.conversationId ?? null,
+      research_task_id: options.researchTaskId ?? null,
       model: options.model ?? null,
     },
     ChatError,
@@ -118,5 +125,25 @@ export async function getConversation(id: string): Promise<ConversationDetail> {
     id: data.id,
     paperId: data.paper_id,
     messages: data.messages.map((m) => ({ role: m.role, content: m.content, createdAt: m.created_at })),
+  }
+}
+
+/** Hội thoại hỏi đáp của một phiên nghiên cứu; messages rỗng nếu chưa có. */
+export async function getConversationByResearch(taskId: string): Promise<ConversationDetail | null> {
+  const data = await apiFetch<{
+    id: string | null
+    paper_id: string | null
+    messages: { role: string; content: string; citations?: ApiCitation[]; created_at: string }[]
+  }>(`/conversations/by-research/${taskId}`, {}, ChatError)
+  if (!data.id) return null
+  return {
+    id: data.id,
+    paperId: data.paper_id,
+    messages: data.messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+      citations: (m.citations ?? []).map(mapCitation),
+      createdAt: m.created_at,
+    })),
   }
 }

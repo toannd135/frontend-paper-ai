@@ -7,6 +7,8 @@ export interface Graph3DNode {
   source: ResearchSource
   __color: string
   __val: number
+  __tier: 'center' | 'mid' | 'small' | 'author'
+  __kind: 'paper' | 'author'
   x?: number
   y?: number
   z?: number
@@ -16,17 +18,20 @@ export interface Graph3DLink {
   id: string
   source: string
   target: string
-  kind: SourceRelation['kind']
+  kind: SourceRelation['kind'] | 'author'
   __color: string
   __width: number
   __particles: number
+  __label: string
 }
 
 // Relevance scale endpoints are deliberately more saturated than the app's pale
 // --color-gold-light token — that pastel tone barely contrasts against the cream
 // canvas background and was the main reason nodes were hard to see.
-const RELEVANCE_LOW: [number, number, number] = [205, 133, 63] // saturated amber/rust
-const RELEVANCE_HIGH: [number, number, number] = [6, 95, 87] // deeper teal than --color-primary, reads better as a filled sphere
+const RELEVANCE_LOW: [number, number, number] = [250, 220, 140] // pastel vàng
+const RELEVANCE_HIGH: [number, number, number] = [150, 205, 235] // pastel xanh dương
+const RELEVANCE_MID: [number, number, number] = [170, 220, 175] // pastel xanh lá
+const CENTER: [number, number, number] = [0, 137, 123] // #00897B — node trung tâm
 const GOLD: [number, number, number] = [217, 164, 65] // --color-gold — reserved for the selected node only
 const TEAL_LIGHT: [number, number, number] = [14, 159, 145] // --color-primary-light — neighbor highlight
 
@@ -47,7 +52,7 @@ function toHex([r, g, b]: [number, number, number]) {
 
 function relevanceColor(relevance: number): [number, number, number] {
   const t = Math.max(0, Math.min(1, (relevance - 60) / (95 - 60)))
-  return mixRgb(RELEVANCE_LOW, RELEVANCE_HIGH, t)
+  return t < 0.5 ? mixRgb(RELEVANCE_LOW, RELEVANCE_MID, t * 2) : mixRgb(RELEVANCE_MID, RELEVANCE_HIGH, (t - 0.5) * 2)
 }
 
 export function nodeValue(citations: number) {
@@ -64,7 +69,13 @@ export interface BuildGraph3DParams {
   theme: GraphTheme
   selectedId: string | null
   excludedIds: Set<string>
+  hoverId?: string | null
+  showAuthors?: boolean
 }
+
+const AUTHOR_PREFIX = 'author:'
+const AUTHOR_RGB: [number, number, number] = [245, 190, 170] // pastel cam
+const RELATION_LABEL: Record<string, string> = { author: 'Tác giả', cites: 'Trích dẫn', related: 'Cùng chủ đề' }
 
 export function buildGraph3DElements({
   sources,
@@ -72,41 +83,54 @@ export function buildGraph3DElements({
   theme,
   selectedId,
   excludedIds,
+  hoverId = null,
+  showAuthors = false,
 }: BuildGraph3DParams): { nodes: Graph3DNode[]; links: Graph3DLink[] } {
   const idSet = new Set(sources.map((s) => s.id))
   const visibleRelations = relations.filter((r) => idSet.has(r.source) && idSet.has(r.target))
 
+  // Hover ưu tiên hơn selected để tập trung luồng thông tin khi di chuột.
+  const focusId = hoverId ?? selectedId
   const neighborIds = new Set<string>()
-  if (selectedId) {
+  if (focusId) {
     visibleRelations.forEach((r) => {
-      if (r.source === selectedId) neighborIds.add(r.target)
-      if (r.target === selectedId) neighborIds.add(r.source)
+      if (r.source === focusId) neighborIds.add(r.target)
+      if (r.target === focusId) neighborIds.add(r.source)
     })
   }
+
+  const centerId = sources.length
+    ? sources.reduce((best, s) => (s.relevance > best.relevance ? s : best), sources[0]).id
+    : null
 
   const bg = theme === 'dark' ? BG_DARK : BG_LIGHT
 
   const nodes: Graph3DNode[] = sources.map((s) => {
-    const isSelected = s.id === selectedId
+    const isSelected = s.id === focusId
     const isNeighbor = neighborIds.has(s.id)
     const isExcluded = excludedIds.has(s.id)
-    const dimmed = (selectedId !== null && !isSelected && !isNeighbor) || isExcluded
+    const dimmed = (focusId !== null && !isSelected && !isNeighbor) || isExcluded
 
-    let rgb = relevanceColor(s.relevance)
-    if (isSelected) rgb = GOLD
-    else if (isNeighbor) rgb = TEAL_LIGHT
+    const tier: Graph3DNode['__tier'] = s.id === centerId ? 'center' : s.relevance >= 80 ? 'mid' : 'small'
+    const tierScale = tier === 'center' ? 1.9 : tier === 'mid' ? 1.1 : 0.75
+
+    let rgb = tier === 'center' ? CENTER : relevanceColor(s.relevance)
+    if (isSelected && tier !== 'center') rgb = GOLD
+    else if (isNeighbor && tier !== 'center') rgb = TEAL_LIGHT
     if (dimmed) rgb = mixRgb(rgb, bg, isExcluded ? 0.72 : 0.45)
 
     return {
       id: s.id,
       source: s,
       __color: toHex(rgb),
-      __val: isSelected ? nodeValue(s.citations) * 1.35 : nodeValue(s.citations),
+      __val: (isSelected ? nodeValue(s.citations) * 1.35 : nodeValue(s.citations)) * tierScale,
+      __tier: tier,
+      __kind: 'paper',
     }
   })
 
   const links: Graph3DLink[] = visibleRelations.map((r) => {
-    const touchesSelected = selectedId !== null && (r.source === selectedId || r.target === selectedId)
+    const touchesSelected = focusId !== null && (r.source === focusId || r.target === focusId)
     const touchesExcluded = excludedIds.has(r.source) || excludedIds.has(r.target)
     const isCites = r.kind === 'cites'
 
@@ -118,7 +142,7 @@ export function buildGraph3DElements({
       rgb = GOLD
       width = isCites ? 2.6 : 1.6
       particles = isCites ? 3 : 0
-    } else if (selectedId !== null || touchesExcluded) {
+    } else if (focusId !== null || touchesExcluded) {
       rgb = mixRgb(rgb, bg, 0.75)
       width = 0.4
     }
@@ -131,8 +155,47 @@ export function buildGraph3DElements({
       __color: toHex(rgb),
       __width: width,
       __particles: particles,
+      __label: touchesSelected ? (RELATION_LABEL[r.kind] ?? r.kind) : '',
     }
   })
+
+  if (showAuthors) {
+    const byAuthor = new Map<string, string[]>()
+    sources.forEach((s) => {
+      s.authors
+        .replace(/et al\.?/gi, '')
+        .split(',')
+        .map((a) => a.trim())
+        .filter((a) => a && a !== 'Không rõ tác giả')
+        .forEach((a) => byAuthor.set(a, [...(byAuthor.get(a) ?? []), s.id]))
+    })
+    byAuthor.forEach((paperIds, name) => {
+      if (paperIds.length < 2) return
+      const id = AUTHOR_PREFIX + name
+      const dimmed = (focusId !== null && !paperIds.includes(focusId) && focusId !== id) || paperIds.every((p) => excludedIds.has(p))
+      nodes.push({
+        id,
+        source: { id, title: name, authors: name, year: 0, publisher: '', type: 'Tác giả', doi: '', relevance: 0, citations: 0, abstract: null, status: 'found' },
+        __color: toHex(dimmed ? mixRgb(AUTHOR_RGB, bg, 0.6) : AUTHOR_RGB),
+        __val: 2.2,
+        __tier: 'author',
+        __kind: 'author',
+      })
+      paperIds.forEach((pid) => {
+        const touches = focusId !== null && (focusId === id || focusId === pid)
+        links.push({
+          id: `${id}->${pid}`,
+          source: id,
+          target: pid,
+          kind: 'author',
+          __color: toHex(touches ? AUTHOR_RGB : mixRgb(AUTHOR_RGB, bg, focusId !== null ? 0.8 : 0.5)),
+          __width: touches ? 1.4 : 0.5,
+          __particles: 0,
+          __label: touches ? 'Tác giả' : '',
+        })
+      })
+    })
+  }
 
   return { nodes, links }
 }

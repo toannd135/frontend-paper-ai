@@ -17,6 +17,7 @@ import {
   Bell,
   ChevronDown,
 } from 'lucide-react'
+import { useAuth } from '../../auth/AuthContext'
 import logo from '../../assets/logo.png'
 import '../AdminApp.css'
 
@@ -74,6 +75,7 @@ const PAGE_TITLES: Record<string, string> = {
 export default function AdminLayout() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { user, logout } = useAuth()
 
   const selectedKey = useMemo(() => {
     const path = location.pathname.replace(/^\/admin\/?/, '')
@@ -83,10 +85,10 @@ export default function AdminLayout() {
   const pageTitle = PAGE_TITLES[selectedKey] ?? 'Tổng quan'
 
   const userMenu: MenuProps['items'] = [
-    { key: 'profile', label: 'Hồ sơ của tôi' },
-    { key: 'client', label: <Link to="/">Xem trang client</Link> },
+    { key: 'profile', label: user?.email ?? 'Hồ sơ của tôi', disabled: true },
+    { key: 'client', label: <Link to="/workspace">Xem trang client</Link> },
     { type: 'divider' },
-    { key: 'logout', label: 'Đăng xuất', danger: true },
+    { key: 'logout', label: 'Đăng xuất', danger: true, onClick: logout },
   ]
 
   return (
@@ -123,7 +125,7 @@ export default function AdminLayout() {
             </Badge>
             <Dropdown menu={{ items: userMenu }} trigger={['click']}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-                <div className="admin-avatar">NA</div>
+                <div className="admin-avatar">{(user?.full_name || user?.email || '?').slice(0, 2).toUpperCase()}</div>
                 <ChevronDown size={14} color="var(--color-ink-muted)" />
               </div>
             </Dropdown>

@@ -16,6 +16,7 @@
     "@ant-design/icons": "^5.5.2",
     "3d-force-graph": "^1.80.0",
     "antd": "^5.22.2",
+    "force-graph": "^1.52.0",
     "katex": "^0.19.0",
     "lucide-react": "^0.462.0",
     "mermaid": "^11.17.2",

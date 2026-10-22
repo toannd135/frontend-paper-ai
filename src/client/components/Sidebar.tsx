@@ -1,7 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Popconfirm } from 'antd'
-import { Plus, Search, X, FileStack, LayoutDashboard, Trash2, Loader2, CheckCircle2, AlertCircle, Clock3 } from 'lucide-react'
+import { shortTitle } from '../lib/shortTitle'
+import { Plus, Search, X, FileStack, LayoutDashboard, Trash2, Loader2, CheckCircle2, AlertCircle, Clock3, Sun, Moon, LogOut } from 'lucide-react'
+import { useThemeMode } from '../state/themeMode'
+import { useAuth } from '../../auth/AuthContext'
 import type { ResearchHistoryItem } from '../../types'
 import logo from '../../assets/logo.png'
 
@@ -51,6 +54,8 @@ export default function Sidebar({
   onCloseMobile,
 }: SidebarProps) {
   const [query, setQuery] = useState('')
+  const { mode, toggle: toggleTheme } = useThemeMode()
+  const { user, logout } = useAuth()
 
   const groups = useMemo(() => {
     const now = new Date()
@@ -93,10 +98,16 @@ export default function Sidebar({
           <FileStack size={16} />
           <span className="sidebar-label">Tài liệu đã tải</span>
         </Link>
-        <Link to="/admin" className="sidebar-footer-btn" title="Trang quản trị">
-          <LayoutDashboard size={16} />
-          <span className="sidebar-label">Quản trị</span>
-        </Link>
+        {user?.role === 'admin' && (
+          <Link to="/admin" className="sidebar-footer-btn" title="Trang quản trị">
+            <LayoutDashboard size={16} />
+            <span className="sidebar-label">Quản trị</span>
+          </Link>
+        )}
+        <button onClick={toggleTheme} className="sidebar-footer-btn" title="Đổi giao diện sáng/tối">
+          {mode === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          <span className="sidebar-label">{mode === 'dark' ? 'Chế độ sáng' : 'Chế độ tối'}</span>
+        </button>
       </div>
 
       <div className="sidebar-divider" />
@@ -133,7 +144,7 @@ export default function Sidebar({
                   className={`conv-item${h.id === activeTaskId ? ' active' : ''}`}
                 >
                   <StatusIcon status={h.status} />
-                  <span className="sidebar-label conv-item-title">{h.question}</span>
+                  <span className="sidebar-label conv-item-title">{shortTitle(h.question)}</span>
                 </button>
                 <Popconfirm
                   title="Xoá phiên nghiên cứu này?"
@@ -155,13 +166,16 @@ export default function Sidebar({
 
       <div className="sidebar-footer">
         <div className="sidebar-user-row">
-          <div className="sidebar-user" title="Phiên làm việc cục bộ — hệ thống chưa có đăng nhập">
-            <div className="sidebar-avatar">P</div>
+          <div className="sidebar-user" title={user?.email}>
+            <div className="sidebar-avatar">{(user?.full_name || user?.email || '?').charAt(0).toUpperCase()}</div>
             <div className="sidebar-user-text sidebar-label">
-              <p>Phiên cục bộ</p>
-              <p>Chưa có đăng nhập</p>
+              <p>{user?.full_name || user?.email}</p>
+              <p>{user?.role === 'admin' ? 'Quản trị viên' : 'Người dùng'}</p>
             </div>
           </div>
+          <button onClick={logout} className="sidebar-footer-btn sidebar-logout-btn" title="Đăng xuất" aria-label="Đăng xuất">
+            <LogOut size={16} />
+          </button>
         </div>
       </div>
     </aside>

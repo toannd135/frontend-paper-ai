@@ -2,6 +2,7 @@ import { useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react'
 import { Paperclip, ArrowUp } from 'lucide-react'
 import logo from '../../assets/logo.png'
 import { topicSuggestions } from '../constants'
+import { useChatModels } from '../state/useChatModels'
 
 interface InitialStateProps {
   onSubmit: (topic: string) => void
@@ -11,6 +12,7 @@ interface InitialStateProps {
 export default function InitialState({ onSubmit, onUploadPaper }: InitialStateProps) {
   const [value, setValue] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { models, selectedModel, setSelectedModel } = useChatModels()
 
   const submit = () => {
     if (!value.trim()) return
@@ -49,6 +51,23 @@ export default function InitialState({ onSubmit, onUploadPaper }: InitialStatePr
             aria-label="Chủ đề nghiên cứu"
           />
           <div className="initial-input-actions">
+            {models.length > 0 && (
+              <select
+                className="chat-model-select in-card"
+                value={selectedModel ?? ''}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                aria-label="Chọn model trả lời"
+                title={models.find((m) => m.id === selectedModel)?.label}
+              >
+                {models.map((m) => (
+                  <option key={m.id} value={m.id} disabled={!m.available}>
+                    {m.label}
+                    {!m.available ? ' (cần API key)' : ''}
+                  </option>
+                ))}
+              </select>
+            )}
+            <span className="initial-actions-spacer" />
             <input
               ref={fileInputRef}
               type="file"

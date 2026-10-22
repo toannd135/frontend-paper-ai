@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { Paperclip, ArrowUp, FileText, Loader2, Check, X, BookOpenText } from 'lucide-react'
 import { useApp } from '../../state/AppContext'
-import { fetchChatModels, type ChatModel } from '../../api/chat'
+import { useChatModels } from '../../state/useChatModels'
 import UserBubble from './UserBubble'
 import { AiText, AiTyping } from './AiBubble'
 import ClarifyCard from './ClarifyCard'
@@ -22,8 +22,7 @@ export default function ChatView() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [input, setInput] = useState('')
-  const [models, setModels] = useState<ChatModel[]>([])
-  const [selectedModel, setSelectedModel] = useState<string | undefined>(undefined)
+  const { models, selectedModel, setSelectedModel } = useChatModels()
 
   useEffect(() => {
     const el = scrollRef.current
@@ -32,22 +31,6 @@ export default function ChatView() {
       el.scrollTop = el.scrollHeight
     })
   }, [chatMessages])
-
-  useEffect(() => {
-    let cancelled = false
-    fetchChatModels()
-      .then((list) => {
-        if (cancelled) return
-        setModels(list)
-        setSelectedModel((current) => current ?? list.find((m) => m.available)?.id ?? list[0]?.id)
-      })
-      .catch(() => {
-        // Im lặng bỏ qua — không lấy được danh sách thì chat vẫn dùng model mặc định phía backend.
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   const send = () => {
     if (!input.trim()) return
@@ -159,23 +142,6 @@ export default function ChatView() {
       </div>
 
       <div className="chat-input-bar">
-        {models.length > 0 && (
-          <div className="chat-model-bar">
-            <select
-              className="chat-model-select"
-              value={selectedModel ?? ''}
-              onChange={(e) => setSelectedModel(e.target.value)}
-              aria-label="Chọn model trả lời"
-            >
-              {models.map((m) => (
-                <option key={m.id} value={m.id} disabled={!m.available}>
-                  {m.label}
-                  {!m.available ? ' (cần API key)' : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
         <div className="chat-input-card">
           <textarea
             rows={1}
@@ -191,6 +157,22 @@ export default function ChatView() {
             style={{ display: 'none' }}
             onChange={onFileChange}
           />
+          {models.length > 0 && (
+            <select
+              className="chat-model-select in-card"
+              value={selectedModel ?? ''}
+              onChange={(e) => setSelectedModel(e.target.value)}
+              aria-label="Chọn model trả lời"
+              title={models.find((m) => m.id === selectedModel)?.label}
+            >
+              {models.map((m) => (
+                <option key={m.id} value={m.id} disabled={!m.available}>
+                  {m.label}
+                  {!m.available ? ' (cần API key)' : ''}
+                </option>
+              ))}
+            </select>
+          )}
           <button className="icon-btn" type="button" aria-label="Đính kèm tệp PDF" onClick={onAttachClick}>
             <Paperclip size={16} />
           </button>

@@ -13,6 +13,8 @@ export class ApiError extends Error {
   }
 }
 
+import { getToken, notifyUnauthorized } from '../../auth/tokenStore'
+
 type ErrorCtor = new (message: string, status?: number) => ApiError
 
 const OFFLINE_MESSAGE = 'Không thể kết nối tới máy chủ paperai (kiểm tra backend đã chạy chưa).'
@@ -42,10 +44,18 @@ export interface RequestOptions extends RequestInit {
 export async function apiFetch<T>(path: string, options: RequestOptions = {}, ErrorClass: ErrorCtor = ApiError): Promise<T> {
   const { statusMessages, ...init } = options
   let response: Response
+  const token = getToken()
+  const headers = new Headers(init.headers)
+  if (token && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${token}`)
   try {
-    response = await fetch(`/api${path}`, init)
+    response = await fetch(`/api${path}`, { ...init, headers })
   } catch {
     throw new ErrorClass(OFFLINE_MESSAGE, 0)
+  }
+
+  if (response.status === 401 && token && !path.startsWith('/auth/login')) {
+    // Token hết hạn/không còn hợp lệ: đăng xuất để quay về trang đăng nhập.
+    notifyUnauthorized()
   }
 
   if (!response.ok) {

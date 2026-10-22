@@ -1,3 +1,4 @@
+import { getToken } from '../../auth/tokenStore'
 import type { ClarificationQuestionSpec, Citation, ResearchStatus } from '../../types'
 import { mapCitation, type ApiCitation } from './chat'
 import { ApiError, apiFetch, postJson, toQuery } from './http'
@@ -123,5 +124,10 @@ export function deleteResearchTask(id: string): Promise<void> {
 
 /** URL mở PDF báo cáo (backend render Typst, fallback HTML). */
 export function researchPdfUrl(id: string, options: { engine?: 'typst' | 'html'; download?: boolean } = {}): string {
-  return `/api/research/${id}/pdf${toQuery({ engine: options.engine ?? 'typst', download: options.download ? 'true' : null })}`
+  // Mở bằng tab mới nên không gửi được header Authorization: đính token vào query.
+  return `/api/research/${id}/pdf${toQuery({
+    engine: options.engine ?? 'typst',
+    download: options.download ? 'true' : null,
+    access_token: getToken(),
+  })}`
 }

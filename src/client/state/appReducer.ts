@@ -20,6 +20,8 @@ export interface AppState {
   clarificationIndex: number
   clarificationAnswers: Record<string, string>
   researchTaskId: string | null
+  /** Id cục bộ của phiên chưa có research task trên server (nháp), để vẫn hiện ở sidebar sau F5. */
+  draftId: string | null
   report: string | null
   citations: Citation[]
   conversationId: string | null
@@ -49,6 +51,7 @@ export const initialState: AppState = {
   clarificationIndex: 0,
   clarificationAnswers: {},
   researchTaskId: null,
+  draftId: null,
   report: null,
   citations: [],
   conversationId: null,
@@ -88,8 +91,8 @@ function truncateTitle(text: string, max = 56): string {
 
 export type Action =
   | { type: 'RESET' }
-  | { type: 'START_TOPIC'; topic: string; userMsgId: string }
-  | { type: 'START_CHAT'; title: string }
+  | { type: 'START_TOPIC'; topic: string; userMsgId: string; draftId: string }
+  | { type: 'START_CHAT'; title: string; draftId: string }
   | { type: 'REPLACE_TYPING'; id: string; text: string; citations?: Citation[]; tone?: 'info' | 'error' | 'success' }
   | { type: 'ADD_MESSAGE'; message: ChatMessage }
   | { type: 'SET_CLARIFICATION_QUESTIONS'; questions: ClarificationQuestionSpec[] }
@@ -106,6 +109,7 @@ export type Action =
       status: string
       summaryMsgId: string
     }
+  | { type: 'RESTORE_SESSION'; snapshot: AppState }
   | { type: 'SET_CONVERSATION_ID'; id: string }
   | { type: 'SET_PAPER_ID'; id: string | null }
   | { type: 'UPDATE_PAPER_UPLOAD'; id: string; status: PaperStatus; error: string | null }
@@ -141,6 +145,7 @@ export function appReducer(state: AppState, action: Action): AppState {
       const userMsg: ChatMessage = { kind: 'user', id: action.userMsgId, text: action.topic }
       return {
         ...freshSession(state),
+        draftId: action.draftId,
         topic: action.topic,
         stage: 'questions',
         headerTitle: truncateTitle(action.topic),
@@ -151,6 +156,7 @@ export function appReducer(state: AppState, action: Action): AppState {
     case 'START_CHAT':
       return {
         ...freshSession(state),
+        draftId: action.draftId,
         stage: 'chat',
         topic: action.title,
         headerTitle: truncateTitle(action.title),
@@ -220,6 +226,14 @@ export function appReducer(state: AppState, action: Action): AppState {
         messages: [{ kind: 'user', id: `${action.summaryMsgId}_u`, text: action.question }, summary],
       }
     }
+    case 'RESTORE_SESSION':
+      return {
+        ...action.snapshot,
+        sidebarCollapsed: state.sidebarCollapsed,
+        history: state.history,
+        historyLoading: state.historyLoading,
+        historyError: state.historyError,
+      }
     case 'SET_CONVERSATION_ID':
       return { ...state, conversationId: action.id }
     case 'SET_PAPER_ID':

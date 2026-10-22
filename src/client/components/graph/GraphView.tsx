@@ -1,13 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import ForceGraph3D, { type ForceGraph3DInstance, type NodeObject, type LinkObject } from '3d-force-graph'
-import SpriteText from 'three-spritetext'
+import ForceGraph, { type NodeObject, type LinkObject } from 'force-graph'
 import {
   Search,
   ZoomIn,
   ZoomOut,
   Maximize,
-  Sun,
-  Moon,
   X,
   ExternalLink,
   Keyboard,
@@ -16,7 +13,7 @@ import {
   Share2,
 } from 'lucide-react'
 import { useApp } from '../../state/AppContext'
-import { buildGraph3DElements, truncateLabel, nodeValue, type GraphTheme, type Graph3DNode, type Graph3DLink } from './graphData'
+import { buildGraph3DElements, truncateLabel, type GraphTheme, type Graph3DNode, type Graph3DLink } from './graphData'
 import type { SourceFilter } from '../../../types'
 
 const GLOBAL_FILTERS: { key: SourceFilter; label: string }[] = [
@@ -25,14 +22,17 @@ const GLOBAL_FILTERS: { key: SourceFilter; label: string }[] = [
   { key: 'recent', label: 'Recent' },
 ]
 
-const BG_LIGHT = '#fff8e8'
-const BG_DARK = '#12211f'
+const newGraph = (el: HTMLElement) => new ForceGraph(el)
+
+const BG_LIGHT = '#ffffff'
 
 export default function GraphView() {
   const { state, setSourceSearch, setSourceFilter, openPaperModal } = useApp()
 
-  const [theme, setTheme] = useState<GraphTheme>('light')
+  const theme: GraphTheme = 'light'
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [showAuthors, setShowAuthors] = useState(false)
+  const [hoverId, setHoverId] = useState<string | null>(null)
   const [typeFilter, setTypeFilter] = useState<Set<string>>(new Set())
   const [yearFilter, setYearFilter] = useState<Set<number>>(new Set())
   const [minRelevance, setMinRelevance] = useState(0)
@@ -40,10 +40,10 @@ export default function GraphView() {
   const [showShortcuts, setShowShortcuts] = useState(false)
 
   const containerRef = useRef<HTMLDivElement | null>(null)
-  // 3d-force-graph's exported constructor isn't itself generic (only the returned
+  // force-graph's exported constructor isn't itself generic (only the returned
   // instance type is), so the engine is kept typed as its default NodeObject/LinkObject
   // and our richer Graph3DNode/Graph3DLink fields are accessed via casts at each callback.
-  const fgRef = useRef<ForceGraph3DInstance | null>(null)
+  const fgRef = useRef<ReturnType<typeof newGraph> | null>(null)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const asNode = (n: NodeObject) => n as unknown as Graph3DNode
   const asLink = (l: LinkObject<NodeObject>) => l as unknown as Graph3DLink
@@ -85,54 +85,63 @@ export default function GraphView() {
         theme,
         selectedId,
         excludedIds,
+        hoverId,
+        showAuthors,
       }),
-    [state.sources, state.sourceRelations, theme, selectedId, excludedIds],
+    [state.sources, state.sourceRelations, theme, selectedId, excludedIds, hoverId, showAuthors],
   )
 
-  // Create the 3D engine once. Drag-to-rotate/orbit and scroll-to-zoom come for
-  // free from the library's built-in orbit controls.
+  // Create the 2D engine once. Drag-to-pan and scroll-to-zoom are built in.
   useEffect(() => {
     const el = containerRef.current
     if (!el) return
 
-    const fg = new ForceGraph3D(el)
+    const fg = newGraph(el)
       .nodeId('id')
+      .nodeRelSize(4)
       .nodeVal((n) => asNode(n).__val)
       .nodeColor((n) => asNode(n).__color)
       .nodeLabel((n) => `${asNode(n).source.title} — ${asNode(n).source.authors}`)
-      .nodeRelSize(4)
-      .nodeThreeObjectExtend(true)
-      .nodeThreeObject((n) => {
-        const source = asNode(n).source
-        const sprite = new SpriteText(truncateLabel(source.title, 28))
-        // A solid chip behind the text guarantees contrast no matter the theme or
-        // whatever node/edge color happens to sit behind the label in 3D space —
-        // relying on the canvas background color alone made labels unreadable.
-        sprite.color = '#ffffff'
-        sprite.backgroundColor = 'rgba(20, 22, 20, 0.78)'
-        sprite.padding = [3, 5]
-        sprite.borderRadius = 3
-        sprite.fontWeight = 'bold'
-        sprite.textHeight = 2.8
-        sprite.position.y = -(Math.cbrt(nodeValue(source.citations)) * 4 + 5)
-        return sprite
+      .nodeCanvasObjectMode(() => 'after')
+      .nodeCanvasObject((n, ctx, scale) => {
+        const node = asNode(n)
+        const tier = node.__tier
+        const fontSize = (tier === 'center' ? 13 : tier === 'mid' ? 11 : 10) / scale
+        const text = truncateLabel(node.source.title, 28)
+        ctx.font = `600 ${fontSize}px sans-serif`
+        const w = ctx.measureText(text).width
+        const x = n.x ?? 0
+        const y = (n.y ?? 0) + Math.sqrt(node.__val) * 4 + fontSize
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.88)'
+        ctx.fillRect(x - w / 2 - 2 / scale, y - fontSize / 2 - 1 / scale, w + 4 / scale, fontSize + 2 / scale)
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.fillStyle = '#1f3b36'
+        ctx.fillText(text, x, y)
       })
       .linkSource('source')
       .linkTarget('target')
       .linkColor((l) => asLink(l).__color)
       .linkWidth((l) => asLink(l).__width)
-      .linkDirectionalArrowLength((l) => (asLink(l).kind === 'cites' ? 3 : 0))
+      .linkDirectionalArrowLength((l) => (asLink(l).kind === 'cites' ? 4 : 0))
       .linkDirectionalArrowRelPos(1)
       .linkDirectionalParticles((l) => asLink(l).__particles)
-      .linkDirectionalParticleWidth(1.6)
+      .linkDirectionalParticleWidth(2)
       .linkCurvature(0.15)
+      .linkLabel((l) => asLink(l).__label)
+      .onNodeHover((n) => setHoverId(n ? asNode(n).id : null))
+      .cooldownTime(4000)
+      .onEngineStop(() => fg.zoomToFit(500, 60))
       .onNodeClick((n) => {
         const id = asNode(n).id
+        if (asNode(n).__kind === 'author') return
         setSelectedId((prev) => (prev === id ? null : id))
       })
       .onBackgroundClick(() => setSelectedId(null))
-      .showNavInfo(false)
 
+    // Đẩy node ra xa nhau để nhãn không đè lên nhau.
+    fg.d3Force('charge')?.strength(-160)
+    fg.d3Force('link')?.distance(70)
     fgRef.current = fg
 
     const ro = new ResizeObserver(() => {
@@ -148,21 +157,26 @@ export default function GraphView() {
     }
   }, [])
 
-  // Push data updates. three-forcegraph merges by node id and preserves existing
+  // Push data updates. force-graph merges by node id and preserves existing
   // x/y/z, so re-supplying the full (re-styled) dataset does not reshuffle the layout.
   useEffect(() => {
     fgRef.current?.graphData({ nodes: graphData.nodes, links: graphData.links })
   }, [graphData])
 
+  // Tự căn khung hình ngay khi mở tab / khi tập nguồn đổi.
   useEffect(() => {
-    fgRef.current?.backgroundColor(theme === 'dark' ? BG_DARK : BG_LIGHT)
-  }, [theme])
+    const t = setTimeout(() => fgRef.current?.zoomToFit(500, 60), 600)
+    return () => clearTimeout(t)
+  }, [state.sources.length, state.sourceRelations.length])
+
+  useEffect(() => {
+    fgRef.current?.backgroundColor(BG_LIGHT)
+  }, [])
 
   const zoomBy = (factor: number) => {
     const fg = fgRef.current
     if (!fg) return
-    const { x, y, z } = fg.cameraPosition()
-    fg.cameraPosition({ x: x * factor, y: y * factor, z: z * factor }, undefined, 300)
+    fg.zoom(fg.zoom() / factor, 300)
   }
   const fitView = () => fgRef.current?.zoomToFit(600, 60)
 
@@ -218,7 +232,7 @@ export default function GraphView() {
   const findSourceTitle = (id: string) => state.sources.find((s) => s.id === id)?.title ?? id
 
   return (
-    <div className="graph-view" data-theme={theme}>
+    <div className="graph-view" data-theme="light">
       <div className="graph-toolbar">
         <div className="graph-toolbar-left">
           <div className="graph-search">
@@ -243,6 +257,12 @@ export default function GraphView() {
             ))}
           </div>
           <button
+            className={`toolbar-btn${showAuthors ? ' active' : ''}`}
+            onClick={() => setShowAuthors((v) => !v)}
+          >
+            Tác giả
+          </button>
+          <button
             className={`toolbar-btn graph-filters-toggle${filtersOpen ? ' active' : ''}`}
             onClick={() => setFiltersOpen((v) => !v)}
           >
@@ -260,13 +280,6 @@ export default function GraphView() {
           <button className="icon-btn" onClick={fitView} aria-label="Vừa khung hình">
             <Maximize size={16} />
           </button>
-          <button
-            className="icon-btn"
-            onClick={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
-            aria-label="Đổi giao diện sáng/tối"
-          >
-            {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
-          </button>
           <button className="icon-btn" onClick={() => setShowShortcuts(true)} aria-label="Phím tắt">
             <Keyboard size={16} />
           </button>
@@ -283,7 +296,7 @@ export default function GraphView() {
           </div>
 
           <div className="graph-filter-group">
-            <p className="graph-filter-label">Loại nguồn</p>
+            <p className="graph-filter-label">Cụm chủ đề / loại nguồn</p>
             <div className="filter-chip-row wrap">
               {allTypes.map((t) => (
                 <button
@@ -330,10 +343,10 @@ export default function GraphView() {
           <div className="graph-legend">
             <p className="graph-filter-label">Chú giải</p>
             <div className="graph-legend-row">
-              <span className="legend-swatch legend-swatch-gold" /> Relevance thấp
+              <span className="legend-swatch legend-swatch-gold" /> Relevance thấp (vàng)
             </div>
             <div className="graph-legend-row">
-              <span className="legend-swatch legend-swatch-teal" /> Relevance cao
+              <span className="legend-swatch legend-swatch-teal" /> Relevance cao (xanh dương)
             </div>
             <div className="graph-legend-row">
               <span className="legend-line legend-line-solid" /> Trích dẫn (cites)
@@ -341,8 +354,14 @@ export default function GraphView() {
             <div className="graph-legend-row">
               <span className="legend-line legend-line-dashed" /> Cùng chủ đề (related)
             </div>
+            <div className="graph-legend-row">
+              <span className="legend-swatch" style={{ background: 'rgb(245,190,170)' }} /> Tác giả (từ 2 bài trở lên)
+            </div>
+            <div className="graph-legend-row">
+              <span className="legend-swatch" style={{ background: '#00897B' }} /> Nguồn trung tâm
+            </div>
             <p className="graph-legend-note">
-              Kích thước node tỷ lệ theo số lượt trích dẫn. Kéo chuột để xoay, cuộn để zoom.
+              Kích thước node tỷ lệ theo số lượt trích dẫn. Kéo chuột để di chuyển, cuộn để zoom.
             </p>
           </div>
         </div>
@@ -388,6 +407,13 @@ export default function GraphView() {
               </div>
             </div>
 
+            {selectedSource.abstract && (
+              <div className="graph-detail-section">
+                <p className="graph-filter-label">Tóm tắt</p>
+                <p className="graph-detail-abstract">{selectedSource.abstract}</p>
+              </div>
+            )}
+
             <div className="graph-detail-section">
               <p className="graph-filter-label">Liên kết ({relatedRelations.length})</p>
               {relatedRelations.length === 0 ? (
@@ -411,8 +437,18 @@ export default function GraphView() {
 
             <div className="graph-detail-actions">
               <button className="toolbar-btn link" onClick={() => openPaperModal(selectedSource.id)}>
-                <ExternalLink size={14} /> Xem chi tiết
+                <ExternalLink size={14} /> Đọc ngay
               </button>
+              {selectedSource.doi && (
+                <a
+                  className="toolbar-btn link"
+                  href={`https://doi.org/${selectedSource.doi}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <ExternalLink size={14} /> Mở tài liệu gốc
+                </a>
+              )}
             </div>
           </aside>
         )}
@@ -430,7 +466,7 @@ export default function GraphView() {
               </button>
             </div>
             <ul className="graph-shortcuts-list">
-              <li>Kéo chuột: xoay góc nhìn 3D</li>
+              <li>Kéo chuột: di chuyển sơ đồ 2D</li>
               <li>Cuộn chuột: zoom in/out</li>
               <li>
                 <kbd>/</kbd> Focus ô tìm kiếm
