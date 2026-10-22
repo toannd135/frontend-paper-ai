@@ -1,5 +1,4 @@
 import { Suspense, lazy, useState } from 'react'
-import { Library } from 'lucide-react'
 import { AppProvider, useApp } from './state/AppContext'
 import Sidebar from './components/Sidebar'
 import Header from './components/Header'
@@ -73,6 +72,8 @@ function Shell() {
           onToggleSidebarCollapse={toggleSidebarCollapsed}
           onSetActiveTab={setActiveTab}
           onOpenSourcesDrawer={() => setSourcesDrawerOpen(true)}
+          sourcesPanelOpen={state.sourcesPanelOpen}
+          onToggleSourcesPanel={toggleSourcesPanel}
         />
 
         <div className="content-row">
@@ -91,16 +92,6 @@ function Shell() {
           </main>
 
           <SourcesPanel mobileOpen={sourcesDrawerOpen} onCloseDrawer={() => setSourcesDrawerOpen(false)} />
-          {!state.sourcesPanelOpen && (
-            <button
-              className="sources-reopen-btn"
-              onClick={toggleSourcesPanel}
-              title="Hiện nguồn tài liệu"
-              aria-label="Hiện nguồn tài liệu"
-            >
-              <Library size={16} />
-            </button>
-          )}
         </div>
       </div>
 

@@ -12,6 +12,8 @@ interface HeaderProps {
   onToggleSidebarCollapse: () => void
   onSetActiveTab: (tab: ActiveTab) => void
   onOpenSourcesDrawer: () => void
+  sourcesPanelOpen: boolean
+  onToggleSourcesPanel: () => void
 }
 
 export default function Header({
@@ -25,6 +27,8 @@ export default function Header({
   onToggleSidebarCollapse,
   onSetActiveTab,
   onOpenSourcesDrawer,
+  sourcesPanelOpen,
+  onToggleSourcesPanel,
 }: HeaderProps) {
   const showResearchTab = sourceCount > 0 || hasReport
   const showArticleTab = stage === 'article' || hasReport
@@ -87,6 +91,17 @@ export default function Header({
       )}
 
       <div className="app-header-right">
+        {stage !== 'initial' && !sourcesPanelOpen && (
+          <button
+            onClick={onToggleSourcesPanel}
+            className="sources-mobile-btn sources-desktop-btn"
+            title="Hiện nguồn tài liệu"
+            aria-label="Hiện nguồn tài liệu"
+          >
+            <Library size={14} /> <span>Nguồn tài liệu</span>
+            {sourceCount > 0 && <span className="sources-desktop-count">{sourceCount}</span>}
+          </button>
+        )}
         <button onClick={onOpenSourcesDrawer} className="sources-mobile-btn" aria-label="Mở nguồn tài liệu">
           <Library size={14} /> <span>{sourceCount}</span>
         </button>

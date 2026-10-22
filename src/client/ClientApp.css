@@ -2507,3 +2507,25 @@ kbd {
 @keyframes sk-pulse {
   50% { opacity: 0.45; }
 }
+
+.sources-desktop-btn {
+  display: none;
+}
+@media (min-width: 1280px) {
+  .sources-desktop-btn {
+    display: inline-flex;
+  }
+  .sources-mobile-btn:not(.sources-desktop-btn) {
+    display: none;
+  }
+}
+.sources-desktop-count {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+}
