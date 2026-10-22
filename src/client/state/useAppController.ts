@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react'
-import type { ActiveTab, ChatMessage, ResearchHistoryItem, ClarificationAnswer, SourceFilter } from '../../types'
+import type { ActiveTab, ChatMessage, ResearchHistoryItem, ClarificationAnswer, ResearchOptions, SourceFilter } from '../../types'
 import { researchingSteps } from '../constants'
 import { ApiError } from '../api/http'
 import { searchSources } from '../api/sources'
@@ -350,16 +350,16 @@ export function useAppController() {
   }, [cancelAllTimers, stashSession])
 
   const submitTopic = useCallback(
-    (topic: string) => {
+    (topic: string, options: ResearchOptions = initialState.researchOptions) => {
       const trimmed = topic.trim()
       if (!trimmed) return
       cancelAllTimers()
-      dispatch({ type: 'START_TOPIC', topic: trimmed, userMsgId: uid('u'), draftId: newDraftId() })
+      dispatch({ type: 'START_TOPIC', topic: trimmed, userMsgId: uid('u'), draftId: newDraftId(), options })
       appendAiTypingThenText(
         'Tôi đã hiểu chủ đề nghiên cứu của bạn.\nĐể xây dựng một bài báo phù hợp hơn, tôi cần xác định thêm một vài thông tin.',
         async () => {
           try {
-            const result = await createResearch(trimmed)
+            const result = await createResearch(trimmed, options)
             if (result.kind === 'clarification') {
               dispatch({ type: 'SET_CLARIFICATION_QUESTIONS', questions: result.questions })
               schedule(() => askClarify(0), 400)
@@ -393,7 +393,7 @@ export function useAppController() {
       schedule(async () => {
         try {
           const answers = { ...stateRef.current.clarificationAnswers }
-          const result = await answerClarification(stateRef.current.topic, answers)
+          const result = await answerClarification(stateRef.current.topic, answers, stateRef.current.researchOptions)
           if (result.kind === 'clarification') {
             dispatch({
               type: 'SET_CLARIFICATION_QUESTIONS',

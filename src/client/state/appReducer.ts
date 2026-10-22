@@ -5,6 +5,7 @@ import type {
   ClarificationQuestionSpec,
   PaperStatus,
   ResearchHistoryItem,
+  ResearchOptions,
   ResearchSource,
   SourceFilter,
   SourceRelation,
@@ -19,6 +20,8 @@ export interface AppState {
   clarificationQuestions: ClarificationQuestionSpec[]
   clarificationIndex: number
   clarificationAnswers: Record<string, string>
+  /** Đối tượng đọc + lĩnh vực chọn lúc gửi chủ đề; gửi lại y nguyên khi trả lời câu hỏi làm rõ. */
+  researchOptions: ResearchOptions
   researchTaskId: string | null
   /** Id cục bộ của phiên chưa có research task trên server (nháp), để vẫn hiện ở sidebar sau F5. */
   draftId: string | null
@@ -50,6 +53,7 @@ export const initialState: AppState = {
   clarificationQuestions: [],
   clarificationIndex: 0,
   clarificationAnswers: {},
+  researchOptions: { audience: 'lecturer', field: '' },
   researchTaskId: null,
   draftId: null,
   report: null,
@@ -91,7 +95,7 @@ function truncateTitle(text: string, max = 56): string {
 
 export type Action =
   | { type: 'RESET' }
-  | { type: 'START_TOPIC'; topic: string; userMsgId: string; draftId: string }
+  | { type: 'START_TOPIC'; topic: string; userMsgId: string; draftId: string; options: ResearchOptions }
   | { type: 'START_CHAT'; title: string; draftId: string }
   | { type: 'REPLACE_TYPING'; id: string; text: string; citations?: Citation[]; tone?: 'info' | 'error' | 'success' }
   | { type: 'ADD_MESSAGE'; message: ChatMessage }
@@ -147,6 +151,7 @@ export function appReducer(state: AppState, action: Action): AppState {
         ...freshSession(state),
         draftId: action.draftId,
         topic: action.topic,
+        researchOptions: action.options,
         stage: 'questions',
         headerTitle: truncateTitle(action.topic),
         headerSubtitle: 'Đang làm rõ yêu cầu nghiên cứu',

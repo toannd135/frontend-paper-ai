@@ -1,5 +1,5 @@
 import { getToken } from '../../auth/tokenStore'
-import type { ClarificationQuestionSpec, Citation, ResearchStatus } from '../../types'
+import type { ClarificationQuestionSpec, Citation, ResearchOptions, ResearchStatus } from '../../types'
 import { mapCitation, type ApiCitation } from './chat'
 import { ApiError, apiFetch, postJson, toQuery } from './http'
 
@@ -84,7 +84,20 @@ function mapSummary(t: ApiResearchSummary): ResearchSummary {
   }
 }
 
-async function postResearch(body: { question: string; clarification_answers?: Record<string, string> }) {
+/** Body của POST /research/ — `field` bỏ trống thì backend tự nhận diện lĩnh vực. */
+interface ResearchRequestBody {
+  question: string
+  clarification_answers?: Record<string, string>
+  audience: ResearchOptions['audience']
+  field?: Exclude<ResearchOptions['field'], ''>
+}
+
+async function postResearch(
+  base: { question: string; clarification_answers?: Record<string, string> },
+  options: ResearchOptions,
+) {
+  const body: ResearchRequestBody = { ...base, audience: options.audience }
+  if (options.field) body.field = options.field
   const data = await postJson<ApiResearchClarification | ApiResearchTask>('/research/', body, ResearchError, {
     503: 'Dịch vụ LLM đang quá tải hoặc chưa cấu hình API key. Thử lại sau ít phút.',
   })
@@ -94,12 +107,16 @@ async function postResearch(body: { question: string; clarification_answers?: Re
   return { kind: 'task', task: mapTask(data as ApiResearchTask) } satisfies CreateResearchResult
 }
 
-export function createResearch(question: string): Promise<CreateResearchResult> {
-  return postResearch({ question })
+export function createResearch(question: string, options: ResearchOptions): Promise<CreateResearchResult> {
+  return postResearch({ question }, options)
 }
 
-export function answerClarification(question: string, clarificationAnswers: Record<string, string>) {
-  return postResearch({ question, clarification_answers: clarificationAnswers })
+export function answerClarification(
+  question: string,
+  clarificationAnswers: Record<string, string>,
+  options: ResearchOptions,
+) {
+  return postResearch({ question, clarification_answers: clarificationAnswers }, options)
 }
 
 export async function getResearchTask(id: string): Promise<ResearchTask> {

@@ -2375,6 +2375,7 @@ kbd {
 }
 .initial-input-actions {
   gap: 6px;
+  flex-wrap: wrap; /* model + đối tượng đọc + lĩnh vực: xuống dòng trên màn hẹp */
 }
 
 /* ============ Workspace polish ============ */

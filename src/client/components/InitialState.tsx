@@ -1,16 +1,19 @@
 import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react'
 import { Paperclip, ArrowUp } from 'lucide-react'
 import logo from '../../assets/logo.png'
-import { topicSuggestions } from '../constants'
+import { audienceOptions, fieldOptions, topicSuggestions } from '../constants'
+import type { ResearchAudience, ResearchField, ResearchOptions } from '../../types'
 import { useChatModels } from '../state/useChatModels'
 
 interface InitialStateProps {
-  onSubmit: (topic: string) => void
+  onSubmit: (topic: string, options: ResearchOptions) => void
   onUploadPaper: (file: File) => void
 }
 
 export default function InitialState({ onSubmit, onUploadPaper }: InitialStateProps) {
   const [value, setValue] = useState('')
+  const [audience, setAudience] = useState<ResearchAudience>('lecturer')
+  const [field, setField] = useState<ResearchField>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { models, selectedModel, setSelectedModel } = useChatModels()
 
@@ -34,7 +37,7 @@ export default function InitialState({ onSubmit, onUploadPaper }: InitialStatePr
 
   const submit = () => {
     if (!value.trim()) return
-    onSubmit(value)
+    onSubmit(value, { audience, field })
   }
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -85,6 +88,32 @@ export default function InitialState({ onSubmit, onUploadPaper }: InitialStatePr
                 ))}
               </select>
             )}
+            <select
+              className="chat-model-select in-card"
+              value={audience}
+              onChange={(e) => setAudience(e.target.value as ResearchAudience)}
+              aria-label="Đối tượng đọc"
+              title={`Đối tượng đọc: ${audienceOptions.find((o) => o.value === audience)?.label ?? ''}`}
+            >
+              {audienceOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            <select
+              className="chat-model-select in-card"
+              value={field}
+              onChange={(e) => setField(e.target.value as ResearchField)}
+              aria-label="Lĩnh vực"
+              title={`Lĩnh vực: ${fieldOptions.find((o) => o.value === field)?.label ?? ''}`}
+            >
+              {fieldOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
             <span className="initial-actions-spacer" />
             <input
               ref={fileInputRef}
@@ -110,7 +139,7 @@ export default function InitialState({ onSubmit, onUploadPaper }: InitialStatePr
 
         <div className="suggestion-row">
           {topicSuggestions.map((s) => (
-            <button key={s} className="suggestion-chip" onClick={() => onSubmit(s)} type="button">
+            <button key={s} className="suggestion-chip" onClick={() => onSubmit(s, { audience, field })} type="button">
               {s}
             </button>
           ))}

@@ -91,3 +91,21 @@ export type ChatMessage =
     }
   | { kind: 'generate-button'; id: string; clicked: boolean }
   | { kind: 'paper-upload'; id: string; filename: string; status: PaperStatus; error: string | null }
+
+/** Đối tượng đọc của bài báo (khớp `audience` của POST /research). */
+export type ResearchAudience = 'lecturer' | 'student' | 'professional'
+
+/** Lĩnh vực (khớp `field` của POST /research); '' = tự động nhận diện (không gửi key). */
+export type ResearchField =
+  | ''
+  | 'computing'
+  | 'computer_vision'
+  | 'environment'
+  | 'medicine'
+  | 'economics'
+  | 'education'
+
+export interface ResearchOptions {
+  audience: ResearchAudience
+  field: ResearchField
+}
