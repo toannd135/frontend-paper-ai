@@ -602,7 +602,7 @@
 .progress-line {
   position: absolute;
   left: 25px;
-  top: 38px;
+  top: 78px;
   bottom: 18px;
   width: 1.5px;
   background: var(--color-hairline);
@@ -2340,8 +2340,8 @@ kbd {
 .spec-card-body.collapsed {
   max-height: 200px;
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(#000 70%, transparent);
-  mask-image: linear-gradient(#000 70%, transparent);
+  -webkit-mask-image: linear-gradient(#000 78%, rgba(0, 0, 0, 0.25));
+  mask-image: linear-gradient(#000 78%, rgba(0, 0, 0, 0.25));
 }
 .spec-toggle {
   display: flex;
@@ -2451,4 +2451,59 @@ kbd {
   background: var(--color-cream-surface);
   color: var(--color-primary);
   opacity: 0.85;
+}
+
+.progress-percent-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+  color: var(--color-ink-muted);
+  margin-bottom: 6px;
+}
+.progress-percent-row strong {
+  font-size: 13px;
+  color: var(--color-primary);
+  font-variant-numeric: tabular-nums;
+}
+.progress-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-hairline);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-primary);
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.spec-start-btn {
+  background: var(--color-primary);
+  color: #fff;
+}
+.spec-start-btn:hover:not(:disabled) {
+  background: var(--color-primary-light);
+  color: #fff;
+}
+.spec-start-btn.started {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #10b981;
+  opacity: 1;
+}
+.spec-value {
+  color: color-mix(in srgb, var(--color-ink) 82%, transparent);
+}
+.spec-label {
+  color: color-mix(in srgb, var(--color-ink-muted) 90%, var(--color-ink));
+}
+.source-skeleton.live {
+  opacity: 1;
+  animation: sk-pulse 1.4s ease-in-out infinite;
+}
+@keyframes sk-pulse {
+  50% { opacity: 0.45; }
 }

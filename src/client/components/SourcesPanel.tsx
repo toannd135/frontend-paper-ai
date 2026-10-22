@@ -103,7 +103,7 @@ export default function SourcesPanel({ mobileOpen, onCloseDrawer }: SourcesPanel
       </div>
 
       <div className="source-list-wrap scrollbar-thin">
-        {state.sources.length === 0 ? (
+        {state.sources.length === 0 && state.stage !== 'researching' ? (
           <div className="source-list-empty">
             <div className="source-skeletons" aria-hidden="true">
               {[0, 1, 2].map((i) => (
@@ -117,7 +117,7 @@ export default function SourcesPanel({ mobileOpen, onCloseDrawer }: SourcesPanel
             </div>
             <p>Các nguồn học thuật sẽ xuất hiện tại đây sau khi bạn bắt đầu nghiên cứu.</p>
           </div>
-        ) : items.length === 0 ? (
+        ) : items.length === 0 && state.stage !== 'researching' ? (
           <div
             style={{
               gridColumn: '1 / -1',
@@ -139,6 +139,14 @@ export default function SourcesPanel({ mobileOpen, onCloseDrawer }: SourcesPanel
             />
           ))
         )}
+        {state.stage === 'researching' &&
+          [0, 1, 2].map((i) => (
+            <div key={`sk-${i}`} className="source-skeleton live" aria-hidden="true">
+              <span className="sk-line w80" />
+              <span className="sk-line w50" />
+              <span className="sk-bar" />
+            </div>
+          ))}
       </div>
     </aside>
   )

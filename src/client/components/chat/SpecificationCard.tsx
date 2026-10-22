@@ -51,10 +51,8 @@ export default function SpecificationCard({ topic, answers, onBegin, started }: 
           <button
             onClick={onBegin}
             disabled={started}
-            className="sidebar-footer-btn"
+            className={`sidebar-footer-btn spec-start-btn${started ? ' started' : ''}`}
             style={{
-              background: started ? 'rgba(217,164,65,0.6)' : 'var(--color-gold)',
-              color: '#fff',
               justifyContent: 'center',
               fontWeight: 600,
               fontSize: '13.5px',
