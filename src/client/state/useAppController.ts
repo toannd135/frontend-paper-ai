@@ -596,13 +596,21 @@ export function useAppController() {
       }
       try {
         await deleteResearchTask(id)
+        // Xoá luôn bản lưu tạm của phiên (bộ nhớ + localStorage) để phiên đã xoá không sống lại.
+        dropDraft(id)
+        stashedRef.current.delete(id)
         dispatch({ type: 'REMOVE_HISTORY_ITEM', id })
-        if (stateRef.current.researchTaskId === id) startNewResearch()
+        if (stateRef.current.researchTaskId === id) {
+          // Không gọi startNewResearch: nó sẽ lưu tạm lại đúng phiên vừa xoá. Dừng theo dõi tiến độ
+          // rồi chuyển về phiên làm việc mới.
+          cancelAllTimers()
+          dispatch({ type: 'RESET' })
+        }
       } catch (err) {
         dispatch({ type: 'HISTORY_ERROR', message: errorMessage(err, 'Không xoá được phiên nghiên cứu.') })
       }
     },
-    [cancelAllTimers, startNewResearch],
+    [cancelAllTimers],
   )
 
   const beginArticleFromButton = useCallback(

@@ -13,7 +13,8 @@ function initialMode(): ThemeMode {
   } catch {
     /* localStorage không khả dụng */
   }
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  // Mặc định sáng (đồng bộ Home/Login); chỉ tối khi người dùng tự chọn.
+  return 'light'
 }
 
 const ThemeModeContext = createContext<{ mode: ThemeMode; toggle: () => void }>({ mode: 'light', toggle: () => {} })

@@ -3,12 +3,16 @@
   --auth-field: #f8fafc;
   --auth-line: #e2e8f0;
   --auth-line-strong: #cbd5e1;
+  --auth-link: #00695c;
+  --auth-placeholder: #64748b;
 }
 :root[data-theme='dark'] .auth-page {
   --auth-surface: var(--color-cream-surface);
   --auth-field: #1d2d2a;
   --auth-line: var(--color-hairline);
   --auth-line-strong: #3a524d;
+  --auth-link: #5eead4;
+  --auth-placeholder: #a8bab4;
 }
 
 .auth-page {
@@ -124,6 +128,9 @@
   color: var(--color-ink-muted);
 }
 @media (max-width: 860px) {
+  .auth-brand {
+    display: flex;
+  }
   .auth-page {
     grid-template-columns: 1fr;
   }
@@ -141,7 +148,7 @@
   background: transparent;
 }
 .auth-brand {
-  display: flex;
+  display: none; /* logo đã có ở cột hero; chỉ hiện khi hero bị ẩn (màn hình hẹp) */
   align-items: center;
   gap: 10px;
 }
@@ -180,6 +187,10 @@
   border: 1px solid var(--auth-line);
   border-radius: 10px;
   transition: border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+}
+.auth-card input::placeholder {
+  color: var(--auth-placeholder);
+  opacity: 1;
 }
 .auth-card input:focus {
   outline: none;
@@ -264,12 +275,13 @@
   padding: 0;
   font-size: 12px;
   font-weight: 500;
-  color: #00897b;
+  color: var(--auth-link);
   background: none;
   border: 0;
   cursor: pointer;
 }
-.auth-forgot:hover {
+.auth-forgot:hover,
+.auth-forgot:focus-visible {
   text-decoration: underline;
 }
 .auth-forgot-note {
