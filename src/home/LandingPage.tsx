@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BookOpenCheck, Check, FileSearch, Languages, Moon, Quote, ShieldCheck, Sparkles, Sun, Telescope } from 'lucide-react'
+import { BookOpenCheck, Check, FileSearch, Languages, Moon, Quote, ShieldCheck, Sparkles, Sun, Telescope, Zap } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import logo from '../assets/logo.png'
 import { researchingSteps } from '../client/constants'
@@ -10,18 +10,40 @@ import './LandingPage.css'
 const FEATURES = [
   {
     icon: Telescope,
+    tag: 'OpenAlex + kho nội bộ',
     title: 'Tìm kiếm và đọc thông minh',
     text: 'Tìm trong kho tài liệu nội bộ và OpenAlex, rồi phân tích các nguồn liên quan đến chủ đề của bạn.',
   },
   {
     icon: BookOpenCheck,
+    tag: 'Tự động',
     title: 'Bài tổng hợp có trích dẫn',
     text: 'Nhận bài báo học thuật có dẫn nguồn rõ ràng, trích dẫn được kiểm tra lại trước khi giao cho bạn.',
   },
   {
     icon: FileSearch,
+    tag: 'Có trang và đoạn gốc',
     title: 'Hỏi đáp trực tiếp trên PDF',
     text: 'Tải bài báo PDF lên và hỏi về nội dung. Câu trả lời kèm trang và đoạn trích gốc để bạn đối chiếu.',
+  },
+]
+
+const FAQ = [
+  {
+    q: 'PaperAI tìm tài liệu ở đâu?',
+    a: 'Trong kho tài liệu nội bộ, kho công bố mở OpenAlex và các file PDF bạn tự tải lên.',
+  },
+  {
+    q: 'Trích dẫn trong bài có đáng tin không?',
+    a: 'Mỗi trích dẫn trỏ về trang và đoạn gốc, và agent tự kiểm tra lại trước khi giao kết quả. Dù vậy bạn vẫn nên đối chiếu với nguồn trước khi dùng trong bài nộp.',
+  },
+  {
+    q: 'Tôi có thể hỏi đáp trên PDF của riêng mình không?',
+    a: 'Có. Tải PDF lên và đặt câu hỏi, câu trả lời sẽ kèm trang và đoạn trích để bạn kiểm tra.',
+  },
+  {
+    q: 'Giao diện có hỗ trợ tiếng Việt không?',
+    a: 'Toàn bộ giao diện, tiến độ xử lý và kết quả đều dùng tiếng Việt.',
   },
 ]
 
@@ -107,6 +129,7 @@ export default function LandingPage() {
           <nav className="lp-nav" aria-label="Điều hướng chính">
             <a href="#tinh-nang">Tính năng</a>
             <a href="#vi-sao">Vì sao PaperAI</a>
+            <a href="#hoi-dap">Hỏi đáp</a>
           </nav>
           <div className="lp-actions">
             <button
@@ -144,7 +167,9 @@ export default function LandingPage() {
       <main id="lp-main">
         <section className="lp-hero lp-wrap" aria-labelledby="lp-title">
           <div className="lp-hero-copy">
-            <p className="lp-eyebrow">Trợ lý nghiên cứu khoa học bằng AI</p>
+            <p className="lp-eyebrow">
+              <Zap size={14} aria-hidden /> Trợ lý nghiên cứu khoa học bằng AI
+            </p>
             <h1 id="lp-title">Nghiên cứu khoa học thông minh hơn với PaperAI</h1>
             <p className="lp-lead">
               Tìm tài liệu, tổng hợp thành bài báo có trích dẫn tự động và hỏi đáp trực tiếp trên file PDF của bạn.
@@ -157,9 +182,14 @@ export default function LandingPage() {
                 Xem tính năng
               </a>
             </div>
-            <p className="lp-proof">
-              <Sparkles size={15} aria-hidden /> Truy cập kho công bố học thuật mở của OpenAlex: hàng trăm triệu công trình.
-            </p>
+            <div className="lp-proof">
+              <p>Dữ liệu qua OpenAlex, gồm công bố từ</p>
+              <ul aria-label="Nguồn dữ liệu">
+                {['OpenAlex', 'arXiv', 'IEEE', 'Crossref'].map((n) => (
+                  <li key={n}>{n}</li>
+                ))}
+              </ul>
+            </div>
             {!user && (
               <p className="lp-note">Đã có tài khoản? <Link to="/login" state={{ from: '/workspace' }}>Đăng nhập</Link></p>
             )}
@@ -169,29 +199,47 @@ export default function LandingPage() {
           <figure className="lp-demo" aria-hidden="true">
             <div className="lp-demo-bar">
               <span /> <span /> <span />
+              <em>paperai · không gian làm việc</em>
             </div>
-            <div className="lp-demo-body">
-              <div className="lp-bubble lp-bubble-user">Ứng dụng RAG trong giáo dục đại học</div>
-              <ul className="lp-steps">
-                {researchingSteps.slice(0, 4).map((s) => (
-                  <li key={s}>
-                    <Check size={14} />
-                    {s}
-                  </li>
-                ))}
-              </ul>
-              <div className="lp-bubble lp-bubble-ai">
-                <span className="lp-sticker">
-                  <Sparkles size={12} /> AI Generated
-                </span>
-                <strong>1. Giới thiệu</strong>
-                <p>
-                  {renderCited(typed)}
-                  <span className="lp-caret" />
-                </p>
-                <div className="lp-cites">
-                  <span className="lp-cite-badge">[1] OpenAlex</span>
-                  <span className="lp-cite-badge">[2] Kho nội bộ</span>
+            <div className="lp-demo-cols">
+              <aside className="lp-demo-side">
+                <b>Lịch sử</b>
+                <span className="lp-side-active">RAG trong giáo dục</span>
+                <span>Học máy y tế</span>
+                <span>Mô hình ngôn ngữ</span>
+              </aside>
+              <div className="lp-demo-body">
+                <div className="lp-bubble lp-bubble-user">Ứng dụng RAG trong giáo dục đại học</div>
+                <ul className="lp-steps">
+                  {researchingSteps.slice(0, 3).map((s) => (
+                    <li key={s}>
+                      <Check size={14} />
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+                <div className="lp-bubble lp-bubble-ai">
+                  <span className="lp-sticker">
+                    <Sparkles size={12} /> AI Generated
+                  </span>
+                  <strong>1. Giới thiệu</strong>
+                  <p>
+                    {renderCited(typed)}
+                    <span className="lp-caret" />
+                  </p>
+                  <div className="lp-cites">
+                    <span className="lp-cite-badge lp-cite-target">
+                      [1] OpenAlex
+                      <span className="lp-demo-tip">
+                        <b>Trang 4 · 3. Phương pháp</b>
+                        “…kết hợp BM25 với vector dày đặc cho độ phủ cao hơn…”
+                      </span>
+                    </span>
+                    <span className="lp-cite-badge">[2] Kho nội bộ</span>
+                  </div>
+                  <svg className="lp-fake-cursor" viewBox="0 0 16 16" width="16" height="16">
+                    <path d="M2 1l11 6-5 1.5L6 14z" />
+                  </svg>
                 </div>
               </div>
             </div>
@@ -202,11 +250,20 @@ export default function LandingPage() {
         <section id="tinh-nang" className="lp-section lp-wrap" aria-labelledby="lp-features">
           <h2 id="lp-features">Bạn có thể làm gì với PaperAI</h2>
           <p className="lp-sub">Từ tìm tài liệu đến viết bài tổng hợp, mọi bước nghiên cứu nằm trong một nơi.</p>
-          <ul className="lp-grid">
-            {FEATURES.map(({ icon: Icon, title, text }) => (
+          <ul className="lp-grid lp-bento">
+            {FEATURES.map(({ icon: Icon, tag, title, text }, i) => (
               <li key={title} className="lp-card">
+                {i === 0 && (
+                  <div className="lp-card-visual" aria-hidden="true">
+                    <span className="lp-cv-search">Ứng dụng RAG trong giáo dục</span>
+                    <span className="lp-cv-line" />
+                    <span className="lp-cv-line short" />
+                    <span className="lp-cv-line" />
+                  </div>
+                )}
                 <span className="lp-card-icon">
-                  <Icon size={22} aria-hidden />
+                  <Icon size={26} aria-hidden />
+                  <span className="lp-tag">{tag}</span>
                 </span>
                 <h3>{title}</h3>
                 <p>{text}</p>
@@ -218,18 +275,19 @@ export default function LandingPage() {
         <section id="vi-sao" className="lp-section lp-wrap" aria-labelledby="lp-why">
           <h2 id="lp-why">Vì sao chọn PaperAI</h2>
           <p className="lp-sub">Nguồn mở, trích dẫn kiểm chứng được và giao diện tiếng Việt.</p>
-          <ul className="lp-grid lp-why-grid">
+          <ul className="lp-grid lp-why-grid lp-bento-why">
             <li className="lp-why">
               <div className="lp-why-visual">
                 <SourcesDiagram />
               </div>
               <span className="lp-card-icon">
-                <Telescope size={22} aria-hidden />
+                <Telescope size={26} aria-hidden />
+                <span className="lp-tag">Tích hợp sẵn</span>
               </span>
               <h3>Nguồn học thuật mở</h3>
               <p>Truy cập dữ liệu công bố từ OpenAlex bên cạnh kho tài liệu riêng và PDF bạn tải lên, tất cả trong một lần tìm.</p>
             </li>
-            <li className="lp-why">
+            <li className="lp-why lp-why-hero">
               <div className="lp-why-visual" aria-hidden="true">
                 <p className="lp-quote-sentence">
                   Truy xuất kết hợp giúp tăng độ phủ khi tra cứu <span className="lp-hl">tài liệu học thuật<em>[1]</em></span>.
@@ -243,7 +301,8 @@ export default function LandingPage() {
                 </div>
               </div>
               <span className="lp-card-icon">
-                <ShieldCheck size={22} aria-hidden />
+                <ShieldCheck size={26} aria-hidden />
+                <span className="lp-tag">Tự phản biện</span>
               </span>
               <h3>Trích dẫn đáng tin</h3>
               <p>Mỗi trích dẫn chỉ tới trang và đoạn trích gốc, agent tự phản biện để giảm nguy cơ dẫn sai hoặc dẫn nguồn không tồn tại.</p>
@@ -265,12 +324,25 @@ export default function LandingPage() {
                 </ul>
               </div>
               <span className="lp-card-icon">
-                <Languages size={22} aria-hidden />
+                <Languages size={26} aria-hidden />
+                <span className="lp-tag">100% tiếng Việt</span>
               </span>
               <h3>Giao diện tiếng Việt</h3>
               <p>Hỏi, đọc kết quả và theo dõi tiến độ hoàn toàn bằng tiếng Việt.</p>
             </li>
           </ul>
+        </section>
+
+        <section id="hoi-dap" className="lp-section lp-wrap lp-faq" aria-labelledby="lp-faq">
+          <h2 id="lp-faq">Câu hỏi thường gặp</h2>
+          <div className="lp-faq-list">
+            {FAQ.map(({ q, a }) => (
+              <details key={q}>
+                <summary>{q}</summary>
+                <p>{a}</p>
+              </details>
+            ))}
+          </div>
         </section>
 
         <section className="lp-band" aria-labelledby="lp-final-title">
@@ -297,6 +369,7 @@ export default function LandingPage() {
             <h2>Sản phẩm</h2>
             <a href="#tinh-nang">Tính năng</a>
             <a href="#vi-sao">Vì sao PaperAI</a>
+            <a href="#hoi-dap">Câu hỏi thường gặp</a>
           </nav>
           <nav className="lp-footer-col" aria-label="Tài khoản">
             <h2>Tài khoản</h2>

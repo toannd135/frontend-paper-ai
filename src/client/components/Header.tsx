@@ -87,7 +87,7 @@ export default function Header({
       )}
 
       <div className="app-header-right">
-        <button onClick={onOpenSourcesDrawer} className="sources-mobile-btn" aria-label="Mở Research Sources">
+        <button onClick={onOpenSourcesDrawer} className="sources-mobile-btn" aria-label="Mở nguồn tài liệu">
           <Library size={14} /> <span>{sourceCount}</span>
         </button>
       </div>

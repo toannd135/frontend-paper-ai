@@ -188,7 +188,7 @@ export function useAppController() {
 
     appendAiTypingThenText(
       citationCount > 0
-        ? `✓ Đã tổng hợp xong báo cáo nghiên cứu với ${citationCount} trích dẫn từ kho tài liệu đã lập chỉ mục và OpenAlex.\nCác nguồn học thuật liên quan nằm ở Research Sources bên phải.`
+        ? `✓ Đã tổng hợp xong báo cáo nghiên cứu với ${citationCount} trích dẫn từ kho tài liệu đã lập chỉ mục và OpenAlex.\nCác nguồn học thuật liên quan nằm ở panel Nguồn tài liệu bên phải.`
         : `✓ Đã tổng hợp xong báo cáo nghiên cứu.\nLưu ý: chưa có trích dẫn nào được gắn — hãy tải lên paper liên quan để cải thiện chất lượng.`,
       () => {
         dispatch({ type: 'ADD_MESSAGE', message: { kind: 'generate-button', id: uid('gen'), clicked: false } })

@@ -18,7 +18,7 @@ import type { SourceFilter } from '../../../types'
 
 const GLOBAL_FILTERS: { key: SourceFilter; label: string }[] = [
   { key: 'all', label: 'All' },
-  { key: 'high', label: 'High relevance' },
+  { key: 'high', label: 'Độ liên quan cao' },
   { key: 'recent', label: 'Recent' },
 ]
 
@@ -77,6 +77,12 @@ export default function GraphView() {
     return excluded
   }, [state.sources, state.sourceSearch, state.sourceFilter, typeFilter, yearFilter, minRelevance])
 
+  // Canvas callback chỉ tạo một lần nên đọc hover/selected qua ref.
+  const labelFocusRef = useRef<{ hover: string | null; selected: string | null }>({ hover: null, selected: null })
+  useEffect(() => {
+    labelFocusRef.current = { hover: hoverId, selected: selectedId }
+  }, [hoverId, selectedId])
+
   const graphData = useMemo(
     () =>
       buildGraph3DElements({
@@ -107,11 +113,14 @@ export default function GraphView() {
         const node = asNode(n)
         const tier = node.__tier
         const fontSize = (tier === 'center' ? 13 : tier === 'mid' ? 11 : 10) / scale
-        const text = truncateLabel(node.source.title, 28)
+        // Chỉ hiện nhãn cho node trung tâm, node đang hover hoặc đang được chọn; tiêu đề đầy đủ xem ở tooltip khi hover.
+        const { hover, selected } = labelFocusRef.current
+        if (node.id !== hover && node.id !== selected && tier !== 'center') return
+        const text = truncateLabel(node.source.title, 22)
         ctx.font = `600 ${fontSize}px sans-serif`
         const w = ctx.measureText(text).width
         const x = n.x ?? 0
-        const y = (n.y ?? 0) + Math.sqrt(node.__val) * 4 + fontSize
+        const y = (n.y ?? 0) + Math.sqrt(node.__val) * 4 + 12 / scale + fontSize / 2
         ctx.fillStyle = 'rgba(255, 255, 255, 0.88)'
         ctx.fillRect(x - w / 2 - 2 / scale, y - fontSize / 2 - 1 / scale, w + 4 / scale, fontSize + 2 / scale)
         ctx.textAlign = 'center'
@@ -131,7 +140,11 @@ export default function GraphView() {
       .linkLabel((l) => asLink(l).__label)
       .onNodeHover((n) => setHoverId(n ? asNode(n).id : null))
       .cooldownTime(4000)
-      .onEngineStop(() => fg.zoomToFit(500, 60))
+      .onEngineStop(() => {
+        if (!fitOnStopRef.current) return
+        fitOnStopRef.current = false
+        fg.zoomToFit(500, 110)
+      })
       .onNodeClick((n) => {
         const id = asNode(n).id
         if (asNode(n).__kind === 'author') return
@@ -159,8 +172,31 @@ export default function GraphView() {
 
   // Push data updates. force-graph merges by node id and preserves existing
   // x/y/z, so re-supplying the full (re-styled) dataset does not reshuffle the layout.
+  // Hover/chọn node chỉ đổi style, không đổi cấu trúc đồ thị: cập nhật tại chỗ để không
+  // reheat simulation (nếu không, engine chạy lại rồi zoomToFit làm khung hình nhảy liên tục).
+  const structKeyRef = useRef('')
+  const fitOnStopRef = useRef(true)
   useEffect(() => {
-    fgRef.current?.graphData({ nodes: graphData.nodes, links: graphData.links })
+    const fg = fgRef.current
+    if (!fg) return
+    const key =
+      graphData.nodes.map((n) => asNode(n).id).join('|') +
+      '#' +
+      graphData.links.map((l) => `${asLink(l).source}>${asLink(l).target}`).join('|')
+    if (key === structKeyRef.current) {
+      const cur = fg.graphData()
+      const skip = new Set(['x', 'y', 'vx', 'vy', 'fx', 'fy', 'index', 'source', 'target'])
+      const merge = (to: object, from: object) => {
+        for (const [k, v] of Object.entries(from)) if (!skip.has(k)) (to as Record<string, unknown>)[k] = v
+      }
+      graphData.nodes.forEach((n, i) => cur.nodes[i] && merge(cur.nodes[i], n))
+      graphData.links.forEach((l, i) => cur.links[i] && merge(cur.links[i], l))
+      fg.nodeColor(fg.nodeColor()) // buộc vẽ lại
+      return
+    }
+    structKeyRef.current = key
+    fitOnStopRef.current = true
+    fg.graphData({ nodes: graphData.nodes, links: graphData.links })
   }, [graphData])
 
   // Tự căn khung hình ngay khi mở tab / khi tập nguồn đổi.
@@ -379,7 +415,7 @@ export default function GraphView() {
 
         {selectedSource && (
           <aside className="graph-detail-panel">
-            <div className="graph-detail-head">
+            <div className="graph-detail-head" style={{ paddingRight: 4 }}>
               <span className="graph-detail-type">{selectedSource.type}</span>
               <button className="icon-btn" onClick={() => setSelectedId(null)} aria-label="Đóng">
                 <X size={16} />

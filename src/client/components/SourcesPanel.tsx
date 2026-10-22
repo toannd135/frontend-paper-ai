@@ -5,9 +5,9 @@ import type { SourceFilter } from '../../types'
 import type { SourceSort } from '../state/appReducer'
 
 const FILTERS: { key: SourceFilter; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'high', label: 'High relevance' },
-  { key: 'recent', label: 'Recent' },
+  { key: 'all', label: 'Tất cả' },
+  { key: 'high', label: 'Độ liên quan cao' },
+  { key: 'recent', label: 'Mới nhất' },
 ]
 
 interface SourcesPanelProps {
@@ -25,7 +25,8 @@ export default function SourcesPanel({ mobileOpen, onCloseDrawer }: SourcesPanel
     toggleSourcesPanel,
   } = useApp()
 
-  let items = [...state.sources]
+  // Bỏ các nguồn hỏng dữ liệu (OpenAlex không trả tiêu đề)
+  let items = state.sources.filter((p) => p.title && p.title !== 'Không có tiêu đề')
   const q = state.sourceSearch.toLowerCase()
   if (q) {
     items = items.filter(
@@ -45,14 +46,14 @@ export default function SourcesPanel({ mobileOpen, onCloseDrawer }: SourcesPanel
         <div className="sources-panel-title">
           <div className="sources-panel-title-left">
             <Library size={16} color="var(--color-primary)" />
-            <h3>Research Sources</h3>
+            <h3>Nguồn tài liệu</h3>
             <span className="sources-count-badge">{state.sources.length}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <button className="icon-btn sources-mobile-close" onClick={onCloseDrawer} aria-label="Đóng">
               ✕
             </button>
-            <button className="icon-btn sources-collapse-btn" onClick={toggleSourcesPanel} aria-label="Thu gọn panel">
+            <button className="icon-btn sources-collapse-btn" onClick={toggleSourcesPanel} aria-label="Thu gọn panel" title="Thu gọn panel">
               <PanelRight size={16} />
             </button>
           </div>
@@ -62,7 +63,7 @@ export default function SourcesPanel({ mobileOpen, onCloseDrawer }: SourcesPanel
           <Search size={14} color="var(--color-ink-muted)" />
           <input
             type="text"
-            placeholder="Search papers..."
+            placeholder="Tìm bài báo..."
             value={state.sourceSearch}
             onChange={(e) => setSourceSearch(e.target.value)}
           />
@@ -81,7 +82,7 @@ export default function SourcesPanel({ mobileOpen, onCloseDrawer }: SourcesPanel
         </div>
 
         <div className="sort-row">
-          <span>Sort:</span>
+          <span>Sắp xếp:</span>
           <select
             value={state.sourceSort}
             onChange={(e) => setSourceSort(e.target.value as SourceSort)}
@@ -94,9 +95,9 @@ export default function SourcesPanel({ mobileOpen, onCloseDrawer }: SourcesPanel
               outline: 'none',
             }}
           >
-            <option value="relevance">Relevance</option>
-            <option value="year">Year</option>
-            <option value="citation">Citation</option>
+            <option value="relevance">Độ liên quan</option>
+            <option value="year">Năm</option>
+            <option value="citation">Trích dẫn</option>
           </select>
         </div>
       </div>
@@ -104,7 +105,16 @@ export default function SourcesPanel({ mobileOpen, onCloseDrawer }: SourcesPanel
       <div className="source-list-wrap scrollbar-thin">
         {state.sources.length === 0 ? (
           <div className="source-list-empty">
-            <Library size={32} style={{ opacity: 0.4, marginBottom: 12 }} />
+            <div className="source-skeletons" aria-hidden="true">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="source-skeleton" style={{ opacity: 1 - i * 0.28 }}>
+                  <span className="sk-line w80" />
+                  <span className="sk-line w50" />
+                  <span className="sk-bar" />
+                </div>
+              ))}
+              <Library size={44} className="source-skeleton-icon" />
+            </div>
             <p>Các nguồn học thuật sẽ xuất hiện tại đây sau khi bạn bắt đầu nghiên cứu.</p>
           </div>
         ) : items.length === 0 ? (

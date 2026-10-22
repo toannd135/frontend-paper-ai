@@ -13,9 +13,9 @@ interface SourceCardProps {
 
 function StatusBadge({ paper }: { paper: ResearchSource }) {
   if (paper.relevance >= 85) {
-    return <span className="source-badge high">High relevance</span>
+    return <span className="source-badge high">Độ liên quan cao</span>
   }
-  return <span className="source-badge found">Found</span>
+  return <span className="source-badge found">Đã tìm thấy</span>
 }
 
 export default function SourceCard({ paper, flash, onView }: SourceCardProps) {
@@ -29,7 +29,9 @@ export default function SourceCard({ paper, flash, onView }: SourceCardProps) {
         <p className="source-card-title">{truncate(paper.title, 62)}</p>
         <StatusBadge paper={paper} />
       </div>
-      <p className="source-card-authors">{paper.authors}</p>
+      {paper.authors && paper.authors !== 'Không rõ tác giả' && (
+        <p className="source-card-authors">{paper.authors}</p>
+      )}
       <div className="source-card-meta">
         <span>{paper.year}</span>
         <span>·</span>

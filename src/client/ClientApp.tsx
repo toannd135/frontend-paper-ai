@@ -95,8 +95,8 @@ function Shell() {
             <button
               className="sources-reopen-btn"
               onClick={toggleSourcesPanel}
-              title="Hiện Research Sources"
-              aria-label="Hiện Research Sources"
+              title="Hiện nguồn tài liệu"
+              aria-label="Hiện nguồn tài liệu"
             >
               <Library size={16} />
             </button>
