@@ -26,6 +26,8 @@ export interface ResearchSourceRaw {
 export interface ResearchSource extends ResearchSourceRaw {
   id: string
   status: 'found' | 'rejected'
+  /** PDF người dùng tải lên: không có điểm liên quan hay trang OpenAlex. */
+  uploaded?: boolean
 }
 
 export type SourceRelationKind = 'cites' | 'related'
@@ -105,7 +107,13 @@ export type ResearchField =
   | 'economics'
   | 'education'
 
+/** Nơi nộp bài (gửi lên POST /research qua `target_venue`); '' = không theo venue nào (không gửi key). */
+export type ResearchVenue = '' | 'ieee' | 'cvpr' | 'neurips' | 'acl' | 'acm' | 'elsevier' | 'medical'
+
 export interface ResearchOptions {
   audience: ResearchAudience
   field: ResearchField
+  venue: ResearchVenue
+  /** Có giá trị: research chỉ dùng PDF của workspace này, không tìm trên OpenAlex. */
+  workspaceId?: string
 }

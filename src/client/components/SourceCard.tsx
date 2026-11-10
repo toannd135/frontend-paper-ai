@@ -12,6 +12,9 @@ interface SourceCardProps {
 }
 
 function StatusBadge({ paper }: { paper: ResearchSource }) {
+  if (paper.uploaded) {
+    return <span className="source-badge found">PDF của bạn</span>
+  }
   if (paper.relevance >= 85) {
     return <span className="source-badge high">Độ liên quan cao</span>
   }
@@ -33,13 +36,17 @@ export default function SourceCard({ paper, flash, onView }: SourceCardProps) {
         <p className="source-card-authors">{paper.authors}</p>
       )}
       <div className="source-card-meta">
-        <span>{paper.year}</span>
-        <span>·</span>
+        {paper.year ? (
+          <>
+            <span>{paper.year}</span>
+            <span>·</span>
+          </>
+        ) : null}
         <span>{paper.publisher}</span>
         <span>·</span>
         <span>{paper.type}</span>
       </div>
-      <div className="source-card-relevance">
+      {!paper.uploaded && (<div className="source-card-relevance">
         <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
           <div className="relevance-track">
             <div className="relevance-fill" style={{ width: `${paper.relevance}%` }} />
@@ -52,7 +59,7 @@ export default function SourceCard({ paper, flash, onView }: SourceCardProps) {
             {paper.citations}
           </span>
         ) : null}
-      </div>
+      </div>)}
       <div className="source-card-actions" onClick={(e) => e.stopPropagation()}>
         <button className="btn-view" onClick={onView}>
           View

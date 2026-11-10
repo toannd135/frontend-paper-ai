@@ -1,13 +1,28 @@
 import { useState } from 'react'
-import { App as AntApp, Tooltip } from 'antd'
-import { FileDown, FileText, Copy, Check, MessageCircle, Download } from 'lucide-react'
+import { App as AntApp, Dropdown, Tooltip, type MenuProps } from 'antd'
+import { FileDown, FileText, Copy, Check, MessageCircle, Download, FileCode2, ChevronDown } from 'lucide-react'
 import { useApp } from '../../state/AppContext'
-import { researchPdfUrl } from '../../api/research'
+import {
+  lintResearchReport,
+  researchExportUrl,
+  researchPdfUrl,
+  type ExportVenue,
+} from '../../api/research'
 import ArticleContent from './ArticleContent'
+
+const VENUES: { key: ExportVenue; label: string }[] = [
+  { key: 'ieee', label: 'IEEE (IEEEtran)' },
+  { key: 'cvpr', label: 'CVPR / ICCV (cần cvpr.sty)' },
+  { key: 'neurips', label: 'NeurIPS / ICLR (cần neurips.sty)' },
+  { key: 'acl', label: 'ACL / EMNLP (cần acl.sty)' },
+  { key: 'acm', label: 'ACM (acmart)' },
+  { key: 'elsevier', label: 'Elsevier (elsarticle)' },
+  { key: 'medical', label: 'Y sinh (IMRaD, Vancouver)' },
+]
 
 export default function ArticleView() {
   const { state, setActiveTab } = useApp()
-  const { message } = AntApp.useApp()
+  const { message, modal } = AntApp.useApp()
   const [copied, setCopied] = useState(false)
   const taskId = state.researchTaskId
   const hasReport = !!state.report
@@ -39,6 +54,53 @@ export default function ArticleView() {
     window.open(researchPdfUrl(taskId, { engine }), '_blank', 'noopener,noreferrer')
   }
 
+  const download = (url: string) => {
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
+  const exportLatex = async (venue: ExportVenue) => {
+    if (!taskId) return
+    try {
+      const warnings = await lintResearchReport(taskId, venue)
+      if (warnings.length) {
+        modal.confirm({
+          title: `${warnings.length} cảnh báo trước khi xuất`,
+          content: (
+            <ul className="export-warnings">
+              {warnings.map((w, i) => <li key={i}>{w.message}</li>)}
+            </ul>
+          ),
+          okText: 'Vẫn tải gói LaTeX',
+          cancelText: 'Huỷ',
+          onOk: () => download(researchExportUrl(taskId, 'latex', { venue })),
+        })
+        return
+      }
+    } catch {
+      // Lint lỗi không chặn việc xuất
+    }
+    download(researchExportUrl(taskId, 'latex', { venue }))
+  }
+
+  const exportMenu: MenuProps = {
+    items: [
+      { type: 'group', label: 'Gói LaTeX theo nơi nộp', children: VENUES.map((v) => ({ key: `latex:${v.key}`, label: v.label })) },
+      { type: 'divider' },
+      { key: 'bib', label: 'BibTeX (.bib)' },
+      { key: 'ris', label: 'RIS (EndNote, Zotero)' },
+      { key: 'csl', label: 'CSL-JSON' },
+      { key: 'figures.zip', label: 'Hình tách file (PDF/EPS/PNG)' },
+    ],
+    onClick: ({ key }) => {
+      if (!taskId) return
+      if (key.startsWith('latex:')) {
+        void exportLatex(key.slice('latex:'.length) as ExportVenue)
+      } else {
+        download(researchExportUrl(taskId, key as 'bib' | 'ris' | 'csl' | 'figures.zip'))
+      }
+    },
+  }
+
   return (
     <div className="article-view">
       <div className="article-toolbar scrollbar-thin">
@@ -52,6 +114,11 @@ export default function ArticleView() {
             <FileText size={14} /> PDF (HTML)
           </button>
         </Tooltip>
+        <Dropdown menu={exportMenu} trigger={['click']} disabled={!taskId || !hasReport}>
+          <button className="toolbar-btn" disabled={!taskId || !hasReport}>
+            <FileCode2 size={14} /> LaTeX & trích dẫn <ChevronDown size={12} />
+          </button>
+        </Dropdown>
         <button className="toolbar-btn" onClick={downloadMarkdown} disabled={!hasReport}>
           <Download size={14} /> Tải Markdown
         </button>

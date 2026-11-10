@@ -54,7 +54,7 @@ export default function PaperModal() {
           </div>
         </div>
 
-        <div className="paper-modal-section">
+        {!paper.uploaded && <div className="paper-modal-section">
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
             <p className="paper-modal-label" style={{ margin: 0 }}>
               Độ liên quan (theo thứ hạng OpenAlex)
@@ -64,18 +64,19 @@ export default function PaperModal() {
             </p>
           </div>
           <Progress percent={paper.relevance} showInfo={false} strokeColor="#D9A441" size="small" />
-        </div>
+        </div>}
 
         <div className="paper-modal-section" style={{ marginBottom: 0 }}>
           <p className="paper-modal-label">Abstract</p>
           <p className="paper-modal-abstract">
             {paper.abstract ||
+              (paper.uploaded ? 'Đây là PDF bạn đã tải lên.' : null) ||
               'Bài báo này chưa có abstract công khai trên OpenAlex (thường do nhà xuất bản không cho phép chỉ mục).'}
           </p>
         </div>
       </div>
 
-      <div className="paper-modal-footer">
+      {!paper.uploaded && <div className="paper-modal-footer">
         <a
           className="paper-modal-link"
           href={paper.doi ? `https://doi.org/${paper.doi}` : openAlexUrl}
@@ -84,7 +85,7 @@ export default function PaperModal() {
         >
           <ExternalLink size={14} /> {paper.doi ? 'Mở DOI' : 'Mở OpenAlex'}
         </a>
-      </div>
+      </div>}
     </Modal>
   )
 }

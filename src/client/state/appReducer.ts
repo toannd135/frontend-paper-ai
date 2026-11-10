@@ -53,7 +53,7 @@ export const initialState: AppState = {
   clarificationQuestions: [],
   clarificationIndex: 0,
   clarificationAnswers: {},
-  researchOptions: { audience: 'lecturer', field: '' },
+  researchOptions: { audience: 'lecturer', field: '', venue: '' },
   researchTaskId: null,
   draftId: null,
   report: null,
@@ -116,6 +116,7 @@ export type Action =
   | { type: 'RESTORE_SESSION'; snapshot: AppState }
   | { type: 'SET_CONVERSATION_ID'; id: string }
   | { type: 'SET_PAPER_ID'; id: string | null }
+  | { type: 'SET_WORKSPACE'; id: string | undefined }
   | { type: 'UPDATE_PAPER_UPLOAD'; id: string; status: PaperStatus; error: string | null }
   | { type: 'SET_STAGE'; stage: Stage }
   | { type: 'ADVANCE_PROGRESS'; id: string }
@@ -158,6 +159,8 @@ export function appReducer(state: AppState, action: Action): AppState {
         messages: [userMsg],
       }
     }
+    case 'SET_WORKSPACE':
+      return { ...state, researchOptions: { ...state.researchOptions, workspaceId: action.id } }
     case 'START_CHAT':
       return {
         ...freshSession(state),

@@ -1,20 +1,29 @@
 import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react'
-import { Paperclip, ArrowUp } from 'lucide-react'
+import { Paperclip, ArrowUp, FileUp, X } from 'lucide-react'
 import logo from '../../assets/logo.png'
-import { audienceOptions, fieldOptions, topicSuggestions } from '../constants'
-import type { ResearchAudience, ResearchField, ResearchOptions } from '../../types'
+import { audienceOptions, fieldOptions, topicSuggestions, venueOptions } from '../constants'
+import type { ResearchAudience, ResearchField, ResearchOptions, ResearchVenue } from '../../types'
 import { useChatModels } from '../state/useChatModels'
 
 interface InitialStateProps {
-  onSubmit: (topic: string, options: ResearchOptions) => void
+  onSubmit: (topic: string, options: ResearchOptions, files?: File[]) => void
   onUploadPaper: (file: File) => void
 }
+
+const MAX_PAPERS = 10
+const MAX_PAPER_MB = 50 // khớp `max_upload_mb` của backend
+const paperKey = (f: File) => `${f.name}:${f.size}`
 
 export default function InitialState({ onSubmit, onUploadPaper }: InitialStateProps) {
   const [value, setValue] = useState('')
   const [audience, setAudience] = useState<ResearchAudience>('lecturer')
   const [field, setField] = useState<ResearchField>('')
+  const [venue, setVenue] = useState<ResearchVenue>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const papersInputRef = useRef<HTMLInputElement>(null)
+  const [useOwnPapers, setUseOwnPapers] = useState(false)
+  const [papers, setPapers] = useState<File[]>([])
+  const [papersError, setPapersError] = useState('')
   const { models, selectedModel, setSelectedModel } = useChatModels()
 
   const [placeholder, setPlaceholder] = useState('')
@@ -35,9 +44,24 @@ export default function InitialState({ onSubmit, onUploadPaper }: InitialStatePr
     return () => clearTimeout(t)
   }, [])
 
+  const missingPapers = useOwnPapers && papers.length === 0
+  const selectedPapers = useOwnPapers ? papers : []
+
   const submit = () => {
-    if (!value.trim()) return
-    onSubmit(value, { audience, field })
+    if (!value.trim() || missingPapers) return
+    onSubmit(value, { audience, field, venue }, selectedPapers)
+  }
+
+  const onPapersChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const picked = Array.from(e.target.files ?? [])
+    e.target.value = ''
+    const valid = picked.filter((f) => f.name.toLowerCase().endsWith('.pdf') && f.size <= MAX_PAPER_MB * 1024 * 1024)
+    const existing = new Set(papers.map(paperKey))
+    const merged = [...papers, ...valid.filter((f) => !existing.has(paperKey(f)))]
+    setPapers(merged.slice(0, MAX_PAPERS))
+    if (valid.length < picked.length) setPapersError(`Đã bỏ qua file không phải PDF hoặc lớn hơn ${MAX_PAPER_MB} MB.`)
+    else if (merged.length > MAX_PAPERS) setPapersError(`Chỉ dùng tối đa ${MAX_PAPERS} PDF mỗi lần.`)
+    else setPapersError('')
   }
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -71,6 +95,60 @@ export default function InitialState({ onSubmit, onUploadPaper }: InitialStatePr
             onKeyDown={onKeyDown}
             aria-label="Chủ đề nghiên cứu"
           />
+          <div className="paper-source-row" role="radiogroup" aria-label="Nguồn tài liệu">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={!useOwnPapers}
+              className={`paper-source-option${!useOwnPapers ? ' active' : ''}`}
+              onClick={() => setUseOwnPapers(false)}
+            >
+              Tự tìm trên OpenAlex
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={useOwnPapers}
+              className={`paper-source-option${useOwnPapers ? ' active' : ''}`}
+              onClick={() => setUseOwnPapers(true)}
+            >
+              Dùng bài báo của tôi
+            </button>
+          </div>
+          {useOwnPapers && (
+            <div className="paper-picker">
+              <input
+                ref={papersInputRef}
+                type="file"
+                accept="application/pdf,.pdf"
+                multiple
+                style={{ display: 'none' }}
+                onChange={onPapersChange}
+                data-testid="research-papers-input"
+              />
+              <button type="button" className="paper-picker-add" onClick={() => papersInputRef.current?.click()}>
+                <FileUp size={15} /> Chọn PDF
+              </button>
+              <span className="paper-picker-note">Tối đa {MAX_PAPERS} PDF. Bài báo chỉ dựa trên các file này.</span>
+              {papers.length > 0 && (
+                <ul className="paper-picker-list">
+                  {papers.map((f) => (
+                    <li key={paperKey(f)}>
+                      <span title={f.name}>{f.name}</span>
+                      <button
+                        type="button"
+                        aria-label={`Bỏ ${f.name}`}
+                        onClick={() => setPapers((current) => current.filter((p) => paperKey(p) !== paperKey(f)))}
+                      >
+                        <X size={14} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {papersError && <p className="paper-picker-error">{papersError}</p>}
+            </div>
+          )}
           <div className="initial-input-actions">
             {models.length > 0 && (
               <select
@@ -114,6 +192,19 @@ export default function InitialState({ onSubmit, onUploadPaper }: InitialStatePr
                 </option>
               ))}
             </select>
+            <select
+              className="chat-model-select in-card"
+              value={venue}
+              onChange={(e) => setVenue(e.target.value as ResearchVenue)}
+              aria-label="Nơi nộp bài"
+              title={`Nơi nộp bài: ${venueOptions.find((o) => o.value === venue)?.label ?? ''}`}
+            >
+              {venueOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
             <span className="initial-actions-spacer" />
             <input
               ref={fileInputRef}
@@ -131,7 +222,7 @@ export default function InitialState({ onSubmit, onUploadPaper }: InitialStatePr
             >
               <Paperclip size={18} />
             </button>
-            <button className="round-send-btn" onClick={submit} type="button" aria-label="Gửi" disabled={!value.trim()}>
+            <button className="round-send-btn" onClick={submit} type="button" aria-label="Gửi" disabled={!value.trim() || missingPapers}>
               <ArrowUp size={18} />
             </button>
           </div>
@@ -139,13 +230,19 @@ export default function InitialState({ onSubmit, onUploadPaper }: InitialStatePr
 
         <div className="suggestion-row">
           {topicSuggestions.map((s) => (
-            <button key={s} className="suggestion-chip" onClick={() => onSubmit(s, { audience, field })} type="button">
+            <button
+              key={s}
+              className="suggestion-chip"
+              onClick={() => onSubmit(s, { audience, field, venue }, selectedPapers)}
+              type="button"
+              disabled={missingPapers}
+            >
               {s}
             </button>
           ))}
         </div>
         <p className="initial-hint">
-          Hoặc bấm <Paperclip size={12} style={{ verticalAlign: -2 }} /> để tải một PDF lên và hỏi đáp trực tiếp với nội dung tài liệu.
+          Hoặc bấm <Paperclip size={12} style={{ verticalAlign: -2 }} /> để hỏi đáp trực tiếp với một PDF mà không tạo bài báo.
         </p>
       </div>
     </div>

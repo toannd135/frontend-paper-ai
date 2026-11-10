@@ -1,6 +1,7 @@
 import { getToken } from '../../auth/tokenStore'
 import type { ClarificationQuestionSpec, Citation, ResearchOptions, ResearchStatus } from '../../types'
 import { mapCitation, type ApiCitation } from './chat'
+import { venueOptions } from '../constants'
 import { ApiError, apiFetch, postJson, toQuery } from './http'
 
 interface ApiResearchClarification {
@@ -17,6 +18,7 @@ interface ApiResearchTask {
   citations: ApiCitation[]
   error: string | null
   created_at: string
+  workspace_id?: string | null
 }
 
 interface ApiResearchSummary {
@@ -39,6 +41,7 @@ export interface ResearchTask {
   citations: Citation[]
   error: string | null
   createdAt: string
+  workspaceId: string | null
 }
 
 export interface ResearchSummary {
@@ -68,6 +71,7 @@ function mapTask(t: ApiResearchTask): ResearchTask {
     citations: (t.citations ?? []).map(mapCitation),
     error: t.error,
     createdAt: t.created_at,
+    workspaceId: t.workspace_id ?? null,
   }
 }
 
@@ -90,6 +94,8 @@ interface ResearchRequestBody {
   clarification_answers?: Record<string, string>
   audience: ResearchOptions['audience']
   field?: Exclude<ResearchOptions['field'], ''>
+  target_venue?: string
+  workspace_id?: string
 }
 
 async function postResearch(
@@ -98,6 +104,9 @@ async function postResearch(
 ) {
   const body: ResearchRequestBody = { ...base, audience: options.audience }
   if (options.field) body.field = options.field
+  // Backend nhận tên hiển thị của nơi nộp bài và đưa vào prompt.
+  if (options.venue) body.target_venue = venueOptions.find((o) => o.value === options.venue)?.label ?? options.venue
+  if (options.workspaceId) body.workspace_id = options.workspaceId
   const data = await postJson<ApiResearchClarification | ApiResearchTask>('/research/', body, ResearchError, {
     503: 'Dịch vụ LLM đang quá tải hoặc chưa cấu hình API key. Thử lại sau ít phút.',
   })
@@ -137,6 +146,31 @@ export async function listResearchTasks(
 
 export function deleteResearchTask(id: string): Promise<void> {
   return apiFetch<void>(`/research/${id}`, { method: 'DELETE' }, ResearchError)
+}
+
+/** Nơi nộp bài: backend chọn template LaTeX, kiểu trích dẫn và ẩn danh theo venue. */
+export type ExportVenue = Exclude<ResearchOptions['venue'], ''>
+
+/** URL tải gói LaTeX (zip) / references (bib, ris, csl) / hình tách file. */
+export function researchExportUrl(
+  id: string,
+  kind: 'latex' | 'bib' | 'ris' | 'csl' | 'figures.zip',
+  options: { venue?: ExportVenue } = {},
+): string {
+  return `/api/research/${id}/${kind}${toQuery({
+    venue: kind === 'latex' ? options.venue ?? null : null,
+    access_token: getToken(),
+  })}`
+}
+
+export type ReportWarning = { code: string; message: string }
+
+/** Kiểm tra bài trước khi xuất (mục bắt buộc, trích dẫn treo, giới hạn trang… theo venue). */
+export async function lintResearchReport(id: string, venue?: ExportVenue): Promise<ReportWarning[]> {
+  const data = await apiFetch<{ warnings: ReportWarning[] }>(
+    `/research/${id}/lint${toQuery({ venue: venue ?? null })}`, {}, ResearchError,
+  )
+  return data.warnings
 }
 
 /** URL mở PDF báo cáo (backend render Typst, fallback HTML). */

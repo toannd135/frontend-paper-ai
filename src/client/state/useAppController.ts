@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react'
 import type { ActiveTab, ChatMessage, ResearchHistoryItem, ClarificationAnswer, ResearchOptions, SourceFilter } from '../../types'
-import { researchingSteps } from '../constants'
+import { researchingSteps, uploadedResearchingSteps } from '../constants'
 import { ApiError } from '../api/http'
 import { searchSources } from '../api/sources'
 import {
@@ -11,7 +11,7 @@ import {
   listResearchTasks,
 } from '../api/research'
 import { getConversationByResearch, sendChat } from '../api/chat'
-import { uploadPaper, getPaper } from '../api/papers'
+import { createWorkspace, getPaper, listPapers, toUploadedSource, uploadPaper } from '../api/papers'
 import { appReducer, initialState, type AppState, type SourceSort } from './appReducer'
 
 const DRAFT_PREFIX = 'draft_'
@@ -138,8 +138,14 @@ export function useAppController() {
   )
 
   const populateSourcesProgressively = useCallback(
-    async (query: string) => {
+    async (query: string, workspaceId?: string) => {
       try {
+        if (workspaceId) {
+          // Phiên dùng PDF riêng: panel chỉ hiện đúng các PDF agent được phép đọc.
+          const { items } = await listPapers({ workspaceId, status: 'done', limit: 200 })
+          dispatch({ type: 'ADD_SOURCES', sources: items.map(toUploadedSource) })
+          return
+        }
         const found = await searchSources(query)
         // Giữ TOP_SOURCES bài liên quan nhất và chỉ các quan hệ nằm trọn trong tập đó.
         const sources = [...found.sources].sort((a, b) => b.relevance - a.relevance).slice(0, TOP_SOURCES)
@@ -188,7 +194,7 @@ export function useAppController() {
 
     appendAiTypingThenText(
       citationCount > 0
-        ? `✓ Đã tổng hợp xong báo cáo nghiên cứu với ${citationCount} trích dẫn từ kho tài liệu đã lập chỉ mục và OpenAlex.\nCác nguồn học thuật liên quan nằm ở panel Nguồn tài liệu bên phải.`
+        ? `✓ Đã tổng hợp xong báo cáo nghiên cứu với ${citationCount} trích dẫn từ ${stateRef.current.researchOptions.workspaceId ? 'các PDF bạn đã tải lên' : 'kho tài liệu đã lập chỉ mục và OpenAlex'}.\nCác nguồn nằm ở panel Nguồn tài liệu bên phải.`
         : `✓ Đã tổng hợp xong báo cáo nghiên cứu.\nLưu ý: chưa có trích dẫn nào được gắn — hãy tải lên paper liên quan để cải thiện chất lượng.`,
       () => {
         dispatch({ type: 'ADD_MESSAGE', message: { kind: 'generate-button', id: uid('gen'), clicked: false } })
@@ -232,6 +238,7 @@ export function useAppController() {
   const beginResearch = useCallback(() => {
     const taskId = stateRef.current.researchTaskId
     if (!taskId) return
+    const workspaceId = stateRef.current.researchOptions.workspaceId
     dispatch({ type: 'SET_STAGE', stage: 'researching' })
     dispatch({ type: 'SET_SOURCES_PANEL_OPEN', open: true })
     dispatch({ type: 'SET_HEADER', subtitle: 'Đang nghiên cứu chủ đề...' })
@@ -250,13 +257,13 @@ export function useAppController() {
         kind: 'progress',
         id: progressId,
         progressKey: 'researching',
-        steps: researchingSteps,
+        steps: workspaceId ? uploadedResearchingSteps : researchingSteps,
         activeIndex: -1,
         doneCount: 0,
         finished: false,
       },
     })
-    void populateSourcesProgressively(stateRef.current.topic)
+    void populateSourcesProgressively(stateRef.current.topic, workspaceId)
     pollResearchTask(taskId, progressId)
     void refreshHistory()
   }, [pollResearchTask, populateSourcesProgressively, refreshHistory])
@@ -349,12 +356,44 @@ export function useAppController() {
     dispatch({ type: 'RESET' })
   }, [cancelAllTimers, stashSession])
 
-  const submitTopic = useCallback(
-    (topic: string, options: ResearchOptions = initialState.researchOptions) => {
-      const trimmed = topic.trim()
-      if (!trimmed) return
-      cancelAllTimers()
-      dispatch({ type: 'START_TOPIC', topic: trimmed, userMsgId: uid('u'), draftId: newDraftId(), options })
+  /** Tải 1 PDF lên, hiện tiến độ trong chat; trả về true khi đã lập chỉ mục xong. */
+  const indexPaperFile = useCallback(
+    async (file: File, workspaceId: string): Promise<boolean> => {
+      const msgId = uid('paper')
+      dispatch({
+        type: 'ADD_MESSAGE',
+        message: { kind: 'paper-upload', id: msgId, filename: file.name, status: 'pending', error: null },
+      })
+      const fail = (err: unknown, fallback: string) => {
+        dispatch({ type: 'UPDATE_PAPER_UPLOAD', id: msgId, status: 'failed', error: errorMessage(err, fallback) })
+        return false
+      }
+      try {
+        const info = await uploadPaper(file, workspaceId)
+        dispatch({ type: 'UPDATE_PAPER_UPLOAD', id: msgId, status: info.status, error: null })
+        return await new Promise<boolean>((resolve) => {
+          const poll = async () => {
+            try {
+              const current = await getPaper(info.id)
+              dispatch({ type: 'UPDATE_PAPER_UPLOAD', id: msgId, status: current.status, error: current.error })
+              if (current.status === 'done') resolve(true)
+              else if (current.status === 'failed') resolve(false)
+              else schedule(poll, PAPER_POLL_MS)
+            } catch (err) {
+              resolve(fail(err, 'Không thể kiểm tra trạng thái tài liệu.'))
+            }
+          }
+          schedule(poll, PAPER_POLL_MS)
+        })
+      } catch (err) {
+        return fail(err, 'Không thể tải lên tài liệu.')
+      }
+    },
+    [schedule],
+  )
+
+  const requestResearch = useCallback(
+    (trimmed: string, options: ResearchOptions) => {
       appendAiTypingThenText(
         'Tôi đã hiểu chủ đề nghiên cứu của bạn.\nĐể xây dựng một bài báo phù hợp hơn, tôi cần xác định thêm một vài thông tin.',
         async () => {
@@ -377,7 +416,59 @@ export function useAppController() {
         },
       )
     },
-    [appendAiTypingThenText, askClarify, cancelAllTimers, goToSpecification, schedule, warn],
+    [appendAiTypingThenText, askClarify, goToSpecification, schedule, warn],
+  )
+
+  const submitTopic = useCallback(
+    (topic: string, options: ResearchOptions = initialState.researchOptions, files: File[] = []) => {
+      const trimmed = topic.trim()
+      if (!trimmed) return
+      cancelAllTimers()
+      const session = sessionRef.current
+      dispatch({ type: 'START_TOPIC', topic: trimmed, userMsgId: uid('u'), draftId: newDraftId(), options })
+      if (files.length === 0) {
+        requestResearch(trimmed, options)
+        return
+      }
+      dispatch({
+        type: 'ADD_MESSAGE',
+        message: {
+          kind: 'ai-text',
+          id: uid('ai'),
+          text: `Đang tải lên và lập chỉ mục ${files.length} PDF. Bài báo sẽ chỉ dựa trên các tài liệu này.`,
+        },
+      })
+      void (async () => {
+        try {
+          const workspace = await createWorkspace(trimmed.slice(0, 100))
+          if (sessionRef.current !== session) return
+          dispatch({ type: 'SET_WORKSPACE', id: workspace.id })
+          const results = await Promise.all(files.map((file) => indexPaperFile(file, workspace.id)))
+          if (sessionRef.current !== session) return
+          const indexed = results.filter(Boolean).length
+          if (indexed === 0) {
+            dispatch({ type: 'SET_HEADER', subtitle: 'Không xử lý được PDF' })
+            warn('⚠ Không có PDF nào xử lý được nên chưa thể bắt đầu nghiên cứu. Hãy thử lại với file khác.')
+            return
+          }
+          if (indexed < files.length) {
+            dispatch({
+              type: 'ADD_MESSAGE',
+              message: {
+                kind: 'ai-text',
+                id: uid('ai'),
+                text: `⚠ Chỉ dùng ${indexed}/${files.length} PDF, các file lỗi đã được bỏ qua.`,
+                tone: 'error',
+              },
+            })
+          }
+          requestResearch(trimmed, { ...options, workspaceId: workspace.id })
+        } catch (err) {
+          if (sessionRef.current === session) warn(`⚠ ${errorMessage(err, 'Không thể tạo phiên cho tài liệu của bạn.')}`)
+        }
+      })()
+    },
+    [cancelAllTimers, indexPaperFile, requestResearch, warn],
   )
 
   const answerClarify = useCallback(
@@ -453,7 +544,7 @@ export function useAppController() {
 
       void (async () => {
         try {
-          const info = await uploadPaper(file)
+          const info = await uploadPaper(file, stateRef.current.researchOptions.workspaceId)
           dispatch({ type: 'SET_PAPER_ID', id: info.id })
           dispatch({ type: 'UPDATE_PAPER_UPLOAD', id: msgId, status: info.status, error: null })
 
@@ -567,12 +658,13 @@ export function useAppController() {
           status: task.status,
           summaryMsgId: uid('ai'),
         })
+        dispatch({ type: 'SET_WORKSPACE', id: task.workspaceId ?? undefined })
         void restoreChatHistory(task.id)
         if (task.status === 'pending' || task.status === 'processing') {
           pollResearchTask(task.id, null)
         }
         // Nguồn OpenAlex phục vụ panel Research Sources + Graph; không gọi LLM nên rẻ.
-        void populateSourcesProgressively(task.question)
+        void populateSourcesProgressively(task.question, task.workspaceId ?? undefined)
       } catch (err) {
         dispatch({ type: 'RESET' })
         warn(`⚠ ${errorMessage(err, 'Không mở được phiên nghiên cứu.')}`)

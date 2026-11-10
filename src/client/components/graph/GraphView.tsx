@@ -52,7 +52,7 @@ export default function GraphView() {
 
   const allTypes = useMemo(() => Array.from(new Set(state.sources.map((s) => s.type))), [state.sources])
   const allYears = useMemo(
-    () => Array.from(new Set(state.sources.map((s) => s.year))).sort((a, b) => a - b),
+    () => Array.from(new Set(state.sources.map((s) => s.year).filter(Boolean))).sort((a, b) => a - b),
     [state.sources],
   )
 
@@ -427,7 +427,7 @@ export default function GraphView() {
             <div className="graph-detail-grid">
               <div>
                 <p className="g-label">Năm</p>
-                <p className="g-value">{selectedSource.year}</p>
+                <p className="g-value">{selectedSource.year || '—'}</p>
               </div>
               <div>
                 <p className="g-label">Nhà xuất bản</p>
@@ -439,7 +439,7 @@ export default function GraphView() {
               </div>
               <div>
                 <p className="g-label">Relevance</p>
-                <p className="g-value">{selectedSource.relevance}%</p>
+                <p className="g-value">{selectedSource.uploaded ? '—' : `${selectedSource.relevance}%`}</p>
               </div>
             </div>
 
