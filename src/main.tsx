@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
 import { App as AntApp } from 'antd'
 import { ThemeModeProvider } from './client/state/themeMode'
 import ClientApp from './client/ClientApp'
+import LibraryPage from './client/library/LibraryPage'
 import { AuthProvider } from './auth/AuthContext'
 import RequireAuth from './auth/RequireAuth'
 import LoginPage from './auth/LoginPage'
@@ -42,6 +43,14 @@ createRoot(document.getElementById('root')!).render(
               element={
                 <RequireAuth>
                   <ClientApp />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/kho-du-lieu"
+              element={
+                <RequireAuth>
+                  <LibraryPage />
                 </RequireAuth>
               }
             />

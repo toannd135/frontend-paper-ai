@@ -5,7 +5,7 @@ import type { ResearchAudience, ResearchContribution, ResearchField } from '../t
  *  chỉ đánh dấu hoàn tất khi task thật sự `done`. */
 export const researchingSteps: string[] = [
   'Lập kế hoạch truy vấn',
-  'Tìm kiếm kho nội bộ & OpenAlex',
+  'Tìm kiếm tài liệu',
   'Phân tích bằng chứng',
   'Tự phản biện trích dẫn',
   'Tổng hợp báo cáo',

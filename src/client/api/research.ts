@@ -1,5 +1,5 @@
 import { getToken } from '../../auth/tokenStore'
-import type { ClarificationQuestionSpec, Citation, ResearchOptions, ResearchStatus } from '../../types'
+import type { ClarificationQuestionSpec, Citation, ProgressLogEntry, ResearchOptions, ResearchStatus } from '../../types'
 import { mapCitation, type ApiCitation } from './chat'
 import { ApiError, apiFetch, postJson, toQuery } from './http'
 
@@ -17,6 +17,7 @@ interface ApiResearchTask {
   citations: ApiCitation[]
   error: string | null
   created_at: string
+  progress?: ProgressLogEntry[]
 }
 
 interface ApiResearchSummary {
@@ -39,6 +40,7 @@ export interface ResearchTask {
   citations: Citation[]
   error: string | null
   createdAt: string
+  progress: ProgressLogEntry[]
 }
 
 export interface ResearchSummary {
@@ -68,6 +70,7 @@ function mapTask(t: ApiResearchTask): ResearchTask {
     citations: (t.citations ?? []).map(mapCitation),
     error: t.error,
     createdAt: t.created_at,
+    progress: t.progress ?? [],
   }
 }
 

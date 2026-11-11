@@ -1,4 +1,5 @@
 import type {
+  ProgressLogEntry,
   ActiveTab,
   ChatMessage,
   Citation,
@@ -95,6 +96,9 @@ function truncateTitle(text: string, max = 56): string {
   return text.length > max ? text.slice(0, max - 1) + '…' : text
 }
 
+/** Tên node LangGraph -> vị trí trong `researchingSteps`. */
+const STEP_INDEX: Record<string, number> = { plan: 0, search: 1, analyze: 2, critique: 3, model: 3, synthesize: 4 }
+
 export type Action =
   | { type: 'RESET' }
   | { type: 'START_TOPIC'; topic: string; userMsgId: string; draftId: string; options: ResearchOptions }
@@ -120,7 +124,7 @@ export type Action =
   | { type: 'SET_PAPER_ID'; id: string | null }
   | { type: 'UPDATE_PAPER_UPLOAD'; id: string; status: PaperStatus; error: string | null }
   | { type: 'SET_STAGE'; stage: Stage }
-  | { type: 'ADVANCE_PROGRESS'; id: string }
+  | { type: 'SET_PROGRESS'; id: string; log: ProgressLogEntry[]; waiting: boolean }
   | { type: 'FINISH_PROGRESS'; id: string }
   | { type: 'ADD_SOURCES'; sources: ResearchSource[] }
   | { type: 'SET_SOURCES_LOADING'; loading: boolean }
@@ -256,15 +260,34 @@ export function appReducer(state: AppState, action: Action): AppState {
     }
     case 'SET_STAGE':
       return { ...state, stage: action.stage }
-    case 'ADVANCE_PROGRESS': {
+    case 'SET_PROGRESS': {
       return {
         ...state,
         messages: state.messages.map((m) => {
           if (m.kind !== 'progress' || m.id !== action.id || m.finished) return m
-          const activeIndex = Math.min(m.activeIndex + 1, m.steps.length - 1)
-          // Bước cuối chỉ được tick khi FINISH_PROGRESS, tránh hiện "xong hết" trong lúc vẫn đang poll.
-          const doneCount = Math.min(m.activeIndex >= 0 ? m.activeIndex + 1 : 0, m.steps.length - 1)
-          return { ...m, activeIndex, doneCount }
+          // Bước hiện tại = node cuối cùng backend báo; node đã "Xong" thì tính là hoàn thành.
+          let activeIndex = -1
+          let doneCount = 0
+          for (const e of action.log) {
+            const idx = e.step ? STEP_INDEX[e.step] : undefined
+            if (idx === undefined) continue
+            if (e.message.startsWith('Xong')) {
+              doneCount = Math.max(doneCount, idx + 1)
+              activeIndex = Math.max(activeIndex, idx + 1)
+            } else {
+              activeIndex = Math.max(activeIndex, idx)
+              doneCount = Math.max(doneCount, idx)
+            }
+          }
+          // Bước cuối chỉ được tick khi FINISH_PROGRESS.
+          const last = m.steps.length - 1
+          return {
+            ...m,
+            log: action.log,
+            waiting: action.waiting,
+            activeIndex: Math.min(activeIndex, last),
+            doneCount: Math.min(doneCount, last),
+          }
         }),
       }
     }

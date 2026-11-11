@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react'
 import { Paperclip, ArrowUp } from 'lucide-react'
 import logo from '../../assets/logo.png'
-import { audienceOptions, contributionOptions, fieldOptions, topicSuggestions } from '../constants'
+import { topicSuggestions } from '../constants'
 import type { ResearchAudience, ResearchContribution, ResearchField, ResearchOptions } from '../../types'
 import { useChatModels } from '../state/useChatModels'
 
@@ -12,12 +12,12 @@ interface InitialStateProps {
 
 export default function InitialState({ onSubmit, onUploadPaper }: InitialStateProps) {
   const [value, setValue] = useState('')
-  const [audience, setAudience] = useState<ResearchAudience>('lecturer')
-  const [field, setField] = useState<ResearchField>('')
-  const [contributionType, setContributionType] = useState<ResearchContribution>('')
-  const [targetVenue, setTargetVenue] = useState('')
-  const [userResults, setUserResults] = useState('')
-  const [showAdvanced, setShowAdvanced] = useState(false)
+  // Đối tượng đọc và lĩnh vực không cho chọn trên UI nữa: dùng mặc định (giảng viên, tự nhận diện lĩnh vực).
+  const audience: ResearchAudience = 'lecturer'
+  const field: ResearchField = ''
+  const contributionType: ResearchContribution = ''
+  const targetVenue = ''
+  const userResults = ''
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { models, selectedModel, setSelectedModel } = useChatModels()
 
@@ -94,32 +94,6 @@ export default function InitialState({ onSubmit, onUploadPaper }: InitialStatePr
                 ))}
               </select>
             )}
-            <select
-              className="chat-model-select in-card"
-              value={audience}
-              onChange={(e) => setAudience(e.target.value as ResearchAudience)}
-              aria-label="Đối tượng đọc"
-              title={`Đối tượng đọc: ${audienceOptions.find((o) => o.value === audience)?.label ?? ''}`}
-            >
-              {audienceOptions.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-            <select
-              className="chat-model-select in-card"
-              value={field}
-              onChange={(e) => setField(e.target.value as ResearchField)}
-              aria-label="Lĩnh vực"
-              title={`Lĩnh vực: ${fieldOptions.find((o) => o.value === field)?.label ?? ''}`}
-            >
-              {fieldOptions.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
             <span className="initial-actions-spacer" />
             <input
               ref={fileInputRef}
@@ -140,50 +114,6 @@ export default function InitialState({ onSubmit, onUploadPaper }: InitialStatePr
             <button className="round-send-btn" onClick={submit} type="button" aria-label="Gửi" disabled={!value.trim()}>
               <ArrowUp size={18} />
             </button>
-          </div>
-          <div className="initial-advanced">
-            <button
-              type="button"
-              className="initial-advanced-toggle"
-              aria-expanded={showAdvanced}
-              onClick={() => setShowAdvanced((v) => !v)}
-            >
-              {showAdvanced ? 'Ẩn tùy chọn nâng cao' : 'Tùy chọn nâng cao (loại đóng góp, venue, kết quả thực nghiệm)'}
-            </button>
-            {showAdvanced && (
-              <div className="initial-advanced-body">
-                <select
-                  className="chat-model-select in-card"
-                  value={contributionType}
-                  onChange={(e) => setContributionType(e.target.value as ResearchContribution)}
-                  aria-label="Loại đóng góp khoa học"
-                >
-                  {contributionOptions.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  className="initial-advanced-input"
-                  placeholder="Venue dự định gửi (ví dụ: IEEE ICC 2027)"
-                  value={targetVenue}
-                  maxLength={120}
-                  onChange={(e) => setTargetVenue(e.target.value)}
-                  aria-label="Venue dự định gửi bài"
-                />
-                <textarea
-                  rows={4}
-                  className="initial-advanced-input"
-                  placeholder={'Kết quả thực nghiệm đã có (không bắt buộc). Ví dụ:\nDataset CICDDoS2019, metric F1\nours: 0.95, 0.94, 0.96\nBaseline LSTM: 0.91, 0.92, 0.90'}
-                  value={userResults}
-                  maxLength={8000}
-                  onChange={(e) => setUserResults(e.target.value)}
-                  aria-label="Kết quả thực nghiệm đã có"
-                />
-              </div>
-            )}
           </div>
         </div>
 

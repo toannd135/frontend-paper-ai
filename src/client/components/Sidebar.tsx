@@ -97,9 +97,9 @@ export default function Sidebar({
       <WorkspacePicker />
 
       <div className="sidebar-quicknav">
-        <Link to="/admin/papers" className="sidebar-footer-btn" title="Tài liệu đã tải lên">
+        <Link to="/kho-du-lieu" className="sidebar-footer-btn" title="Tạo kho và tải PDF lên">
           <FileStack size={16} />
-          <span className="sidebar-label">Tài liệu đã tải</span>
+          <span className="sidebar-label">Kho dữ liệu</span>
         </Link>
         {user?.role === 'admin' && (
           <Link to="/admin" className="sidebar-footer-btn" title="Trang quản trị">

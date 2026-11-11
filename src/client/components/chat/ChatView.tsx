@@ -100,6 +100,8 @@ export default function ChatView() {
                   activeIndex={m.activeIndex}
                   doneCount={m.doneCount}
                   finished={m.finished}
+                  log={m.log}
+                  waiting={m.waiting}
                 />
               )
             case 'paper-upload':

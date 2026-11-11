@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react'
-import type { ActiveTab, ChatMessage, ResearchHistoryItem, ClarificationAnswer, ResearchOptions, SourceFilter } from '../../types'
+import type {
+  ActiveTab,
+  ChatMessage,
+  ResearchHistoryItem,
+  ClarificationAnswer,
+  ResearchOptions,
+  ResearchSource,
+  SourceFilter,
+} from '../../types'
 import { researchingSteps } from '../constants'
 import { ApiError } from '../api/http'
 import { searchSources } from '../api/sources'
@@ -11,7 +19,7 @@ import {
   listResearchTasks,
 } from '../api/research'
 import { getConversationByResearch, sendChat } from '../api/chat'
-import { uploadPaper, getPaper } from '../api/papers'
+import { uploadPaper, getPaper, listPapers } from '../api/papers'
 import { getCurrentWorkspaceId } from './workspaceStore'
 import { appReducer, initialState, type AppState, type SourceSort } from './appReducer'
 
@@ -138,6 +146,37 @@ export function useAppController() {
     [appendAiTypingThenText],
   )
 
+  /** Panel nguồn khi nghiên cứu trong kho riêng: liệt kê các PDF đã xử lý xong trong kho. */
+  const populateWorkspaceSources = useCallback(
+    async (workspaceId: string) => {
+      dispatch({ type: 'SET_SOURCES_LOADING', loading: true })
+      try {
+        const { items } = await listPapers({ limit: 200, workspaceId, status: 'done' })
+        const sources: ResearchSource[] = items.map((p) => ({
+          id: `paper-${p.id}`,
+          title: p.filename.replace(/\.pdf$/i, ''),
+          authors: '',
+          year: p.createdAt ? new Date(p.createdAt).getFullYear() : new Date().getFullYear(),
+          publisher: 'Kho dữ liệu riêng',
+          type: 'PDF',
+          doi: '',
+          relevance: 1,
+          citations: 0,
+          abstract: null,
+          status: 'found',
+        }))
+        dispatch({ type: 'SET_SOURCE_RELATIONS', relations: [] })
+        dispatch({ type: 'ADD_SOURCES', sources })
+        if (sources.length === 0) warn('⚠ Kho dữ liệu này chưa có PDF nào xử lý xong, nên agent sẽ không có tài liệu để dùng.')
+      } catch (err) {
+        warn(`⚠ ${errorMessage(err, 'Không tải được tài liệu trong kho.')}`)
+      } finally {
+        dispatch({ type: 'SET_SOURCES_LOADING', loading: false })
+      }
+    },
+    [warn],
+  )
+
   const populateSourcesProgressively = useCallback(
     async (query: string) => {
       dispatch({ type: 'SET_SOURCES_LOADING', loading: true })
@@ -222,7 +261,8 @@ export function useAppController() {
             void refreshHistory()
             return
           }
-          if (progressId) dispatch({ type: 'ADVANCE_PROGRESS', id: progressId })
+          if (progressId)
+            dispatch({ type: 'SET_PROGRESS', id: progressId, log: task.progress, waiting: task.status === 'pending' })
           schedule(tick, RESEARCH_POLL_MS)
         } catch (err) {
           dispatch({ type: 'SET_RESEARCH_ERROR' })
@@ -262,11 +302,13 @@ export function useAppController() {
         finished: false,
       },
     })
-    // phiên (workspace) là chế độ chỉ dùng PDF nội bộ: không hiện nguồn ngoài OpenAlex
-    if (!getCurrentWorkspaceId()) void populateSourcesProgressively(stateRef.current.topic)
+    // Kho dữ liệu riêng chỉ dùng PDF nội bộ: panel nguồn hiện PDF của kho thay cho OpenAlex.
+    const workspaceId = getCurrentWorkspaceId()
+    if (workspaceId) void populateWorkspaceSources(workspaceId)
+    else void populateSourcesProgressively(stateRef.current.topic)
     pollResearchTask(taskId, progressId)
     void refreshHistory()
-  }, [pollResearchTask, populateSourcesProgressively, refreshHistory])
+  }, [pollResearchTask, populateSourcesProgressively, populateWorkspaceSources, refreshHistory])
 
   const askClarify = useCallback((index: number) => {
     const question = stateRef.current.clarificationQuestions[index]

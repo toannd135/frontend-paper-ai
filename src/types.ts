@@ -88,9 +88,19 @@ export type ChatMessage =
       activeIndex: number
       doneCount: number
       finished: boolean
+      /** Nhật ký thật từ backend (GET /research/{id} -> progress). */
+      log?: ProgressLogEntry[]
+      /** Task còn `pending`: chưa có worker nhận việc. */
+      waiting?: boolean
     }
   | { kind: 'generate-button'; id: string; clicked: boolean }
   | { kind: 'paper-upload'; id: string; filename: string; status: PaperStatus; error: string | null }
+
+export interface ProgressLogEntry {
+  time: number
+  message: string
+  step: string | null
+}
 
 /** Đối tượng đọc của bài báo (khớp `audience` của POST /research). */
 export type ResearchAudience = 'lecturer' | 'student' | 'professional'

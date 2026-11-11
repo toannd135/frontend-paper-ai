@@ -2575,13 +2575,44 @@ kbd {
   flex: 1;
   min-width: 0;
 }
-.workspace-add {
-  color: rgba(255, 255, 255, 0.8);
+/* ".icon-btn.workspace-add" (0,2,0) để thắng màu chữ tối của .icon-btn trong index.css */
+.icon-btn.workspace-add {
+  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   flex-shrink: 0;
+}
+.icon-btn.workspace-add:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
 }
 .workspace-hint {
   margin: 4px 2px 0;
   font-size: 11px;
   line-height: 1.3;
   color: rgba(255, 255, 255, 0.6);
+}
+
+/* Nhật ký tiến trình nghiên cứu (dưới ProgressCard) */
+.progress-log {
+  margin-top: 12px;
+  max-height: 140px;
+  overflow-y: auto;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--color-code-bg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--color-ink-muted);
+}
+.progress-log-line {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.progress-log-line.muted {
+  font-style: italic;
+}
+.progress-log-time {
+  margin-right: 8px;
+  opacity: 0.7;
 }

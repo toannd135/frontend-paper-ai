@@ -26,7 +26,7 @@ export default function WorkspacePicker() {
       const stored = getCurrentWorkspaceId()
       if (stored && !list.some((w) => w.id === stored)) setCurrentWorkspaceId(null)
     } catch (err) {
-      message.error(err instanceof ApiError ? err.message : 'Không tải được danh sách phiên.')
+      message.error(err instanceof ApiError ? err.message : 'Không tải được danh sách kho dữ liệu riêng.')
     } finally {
       setLoading(false)
     }
@@ -46,9 +46,9 @@ export default function WorkspacePicker() {
       setCurrentWorkspaceId(ws.id)
       setCreating(false)
       setName('')
-      message.success(`Đã tạo phiên "${ws.name}".`)
+      message.success(`Đã tạo kho dữ liệu riêng "${ws.name}".`)
     } catch (err) {
-      message.error(err instanceof ApiError ? err.message : 'Không tạo được phiên.')
+      message.error(err instanceof ApiError ? err.message : 'Không tạo được kho dữ liệu riêng.')
     } finally {
       setSaving(false)
     }
@@ -59,7 +59,7 @@ export default function WorkspacePicker() {
       <div className="workspace-picker-row">
         <Tooltip
           placement="right"
-          title="Chọn phiên: chỉ dùng PDF đã tải vào phiên đó, không tìm nguồn ngoài. Không chọn: dùng PDF chưa gán phiên + nguồn ngoài (OpenAlex)."
+          title="Chọn một kho dữ liệu riêng: chỉ dùng các PDF bạn đã tải vào kho đó, không tìm thêm trên mạng. Không chọn: dùng thư viện chung và tìm thêm bài trên mạng (OpenAlex)."
         >
           <Select
             size="small"
@@ -68,22 +68,22 @@ export default function WorkspacePicker() {
             value={currentId ?? NONE}
             onChange={(v) => setCurrentWorkspaceId(v === NONE ? null : v)}
             options={[
-              { value: NONE, label: 'Không chọn phiên (thư viện chung)' },
+              { value: NONE, label: 'Thư viện chung (không chọn kho)' },
               ...items.map((w) => ({ value: w.id, label: w.name })),
             ]}
             popupMatchSelectWidth={false}
           />
         </Tooltip>
-        <Tooltip title="Tạo phiên mới">
-          <button className="icon-btn workspace-add" onClick={() => setCreating(true)} aria-label="Tạo phiên mới">
+        <Tooltip title="Tạo kho dữ liệu riêng mới">
+          <button className="icon-btn workspace-add" onClick={() => setCreating(true)} aria-label="Tạo kho dữ liệu riêng mới">
             <FolderPlus size={16} />
           </button>
         </Tooltip>
       </div>
-      {currentId && <p className="workspace-hint">Chỉ dùng PDF trong phiên, không tìm nguồn ngoài.</p>}
+      {currentId && <p className="workspace-hint">Chỉ dùng PDF trong kho này, không tìm thêm trên mạng.</p>}
 
       <Modal
-        title="Tạo phiên nghiên cứu"
+        title="Tạo kho dữ liệu riêng"
         open={creating}
         okText="Tạo"
         cancelText="Huỷ"
@@ -96,7 +96,7 @@ export default function WorkspacePicker() {
         <Input
           autoFocus
           maxLength={200}
-          placeholder="Tên đề tài, ví dụ: Phân đoạn u não MRI"
+          placeholder="Tên kho, ví dụ: Phân đoạn u não MRI"
           value={name}
           onChange={(e) => setName(e.target.value)}
           onPressEnter={() => void submitCreate()}
