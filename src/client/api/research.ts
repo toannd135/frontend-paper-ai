@@ -139,11 +139,11 @@ export function deleteResearchTask(id: string): Promise<void> {
   return apiFetch<void>(`/research/${id}`, { method: 'DELETE' }, ResearchError)
 }
 
-/** URL mở PDF báo cáo (backend render Typst, fallback HTML). */
-export function researchPdfUrl(id: string, options: { engine?: 'typst' | 'html'; download?: boolean } = {}): string {
+/** URL mở PDF báo cáo (backend biên dịch LaTeX IEEEtran, fallback HTML). */
+export function researchPdfUrl(id: string, options: { engine?: 'latex' | 'typst' | 'html'; download?: boolean } = {}): string {
   // Mở bằng tab mới nên không gửi được header Authorization: đính token vào query.
   return `/api/research/${id}/pdf${toQuery({
-    engine: options.engine ?? 'typst',
+    engine: options.engine ?? 'latex',
     download: options.download ? 'true' : null,
     access_token: getToken(),
   })}`
