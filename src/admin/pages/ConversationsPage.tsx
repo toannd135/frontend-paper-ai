@@ -45,8 +45,8 @@ export default function ConversationsPage() {
       />
 
       <UnimplementedBanner>
-        Dữ liệu thật từ <code>GET /conversations</code>. Backend chưa có xác thực nên mọi hội thoại đều hiển thị, không
-        lọc theo người dùng.
+        Dữ liệu thật từ <code>GET /conversations</code>. Tài khoản admin thấy hội thoại của mọi người dùng; người dùng
+        thường chỉ thấy hội thoại của mình.
       </UnimplementedBanner>
 
       <ApiErrorBanner error={error} onRetry={() => void reload()} />

@@ -1,12 +1,15 @@
 import { useState } from 'react'
-import { App as AntApp, Tooltip } from 'antd'
-import { FileDown, FileText, Copy, Check, MessageCircle, Download } from 'lucide-react'
+import { App as AntApp, Segmented, Tooltip } from 'antd'
+import { FileDown, FileText, Copy, Check, MessageCircle, Download, FileArchive, BookMarked } from 'lucide-react'
 import { useApp } from '../../state/AppContext'
-import { researchPdfUrl } from '../../api/research'
+import type { ExportKind, PaperTemplate, PdfEngine } from '../../api/research'
+import { useResearchExport } from '../../lib/useOpenResearchPdf'
 import ArticleContent from './ArticleContent'
 
 export default function ArticleView() {
   const { state, setActiveTab } = useApp()
+  const runExport = useResearchExport()
+  const [template, setTemplate] = useState<PaperTemplate>('ieee')
   const { message } = AntApp.useApp()
   const [copied, setCopied] = useState(false)
   const taskId = state.researchTaskId
@@ -34,22 +37,44 @@ export default function ArticleView() {
     URL.revokeObjectURL(url)
   }
 
-  const openPdf = (engine: 'typst' | 'html') => {
+  const exportAs = (kind: ExportKind, engine?: PdfEngine) => {
     if (!taskId) return
-    window.open(researchPdfUrl(taskId, { engine }), '_blank', 'noopener,noreferrer')
+    void runExport(taskId, kind, { engine, template })
   }
+  const disabled = !taskId || !hasReport
 
   return (
     <div className="article-view">
       <div className="article-toolbar scrollbar-thin">
-        <Tooltip title="PDF 2 cột chuẩn hội nghị (Typst). Lần đầu có thể mất vài giây để biên dịch.">
-          <button className="toolbar-btn primary" onClick={() => openPdf('typst')} disabled={!taskId || !hasReport}>
+        <Tooltip title="Mẫu trình bày cho PDF LaTeX và gói LaTeX">
+          <Segmented<PaperTemplate>
+            size="small"
+            value={template}
+            onChange={setTemplate}
+            options={[
+              { label: 'IEEE', value: 'ieee' },
+              { label: 'CVPR', value: 'cvpr' },
+            ]}
+          />
+        </Tooltip>
+        <Tooltip title="PDF 2 cột (LaTeX, theo mẫu đã chọn). Lần đầu có thể mất vài giây để biên dịch; lỗi biên dịch thì backend tự lùi về HTML.">
+          <button className="toolbar-btn primary" onClick={() => exportAs('pdf', 'latex')} disabled={disabled}>
             <FileDown size={14} /> Xuất PDF
           </button>
         </Tooltip>
-        <Tooltip title="PDF 1 cột render từ HTML (Chromium) — dùng khi Typst lỗi với công thức phức tạp.">
-          <button className="toolbar-btn" onClick={() => openPdf('html')} disabled={!taskId || !hasReport}>
+        <Tooltip title="PDF 1 cột render từ HTML (Chromium) — dùng khi bản LaTeX lỗi với công thức phức tạp.">
+          <button className="toolbar-btn" onClick={() => exportAs('pdf', 'html')} disabled={disabled}>
             <FileText size={14} /> PDF (HTML)
+          </button>
+        </Tooltip>
+        <Tooltip title="Gói zip: paper.tex + references.bib + figures/ để nộp bài hoặc sửa tiếp trên Overleaf.">
+          <button className="toolbar-btn" onClick={() => exportAs('latex')} disabled={disabled}>
+            <FileArchive size={14} /> LaTeX (.zip)
+          </button>
+        </Tooltip>
+        <Tooltip title="references.bib, cite key ref{n} khớp [n] trong báo cáo.">
+          <button className="toolbar-btn" onClick={() => exportAs('bib')} disabled={disabled}>
+            <BookMarked size={14} /> BibTeX
           </button>
         </Tooltip>
         <button className="toolbar-btn" onClick={downloadMarkdown} disabled={!hasReport}>

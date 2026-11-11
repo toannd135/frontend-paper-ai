@@ -1,4 +1,4 @@
-import type { ResearchAudience, ResearchField } from '../types'
+import type { ResearchAudience, ResearchContribution, ResearchField } from '../types'
 
 /** Các bước hiển thị trong ProgressCard khi research agent đang chạy phía backend.
  *  Backend không stream tiến độ theo bước; card tiến dần theo mỗi lần poll trạng thái và
@@ -33,4 +33,13 @@ export const fieldOptions: { value: ResearchField; label: string }[] = [
   { value: 'medicine', label: 'Y tế' },
   { value: 'economics', label: 'Kinh tế' },
   { value: 'education', label: 'Giáo dục' },
+]
+
+export const contributionOptions: { value: ResearchContribution; label: string }[] = [
+  { value: '', label: 'Loại đóng góp: tự phân loại' },
+  { value: 'new_method', label: 'Đề xuất mô hình / phương pháp mới' },
+  { value: 'improvement', label: 'Cải tiến phương pháp có sẵn' },
+  { value: 'comparison', label: 'So sánh các mô hình' },
+  { value: 'system', label: 'Xây dựng hệ thống thực tế' },
+  { value: 'survey', label: 'Tổng quan / khảo sát' },
 ]

@@ -7,6 +7,7 @@ import { useThemeMode } from '../state/themeMode'
 import { useAuth } from '../../auth/AuthContext'
 import type { ResearchHistoryItem } from '../../types'
 import logo from '../../assets/logo.png'
+import WorkspacePicker from './WorkspacePicker'
 
 interface SidebarProps {
   collapsed: boolean
@@ -92,6 +93,8 @@ export default function Sidebar({
           <span className="sidebar-label">Bài nghiên cứu mới</span>
         </button>
       </div>
+
+      <WorkspacePicker />
 
       <div className="sidebar-quicknav">
         <Link to="/admin/papers" className="sidebar-footer-btn" title="Tài liệu đã tải lên">

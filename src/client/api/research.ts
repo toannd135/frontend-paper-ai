@@ -86,18 +86,27 @@ function mapSummary(t: ApiResearchSummary): ResearchSummary {
 
 /** Body của POST /research/ — `field` bỏ trống thì backend tự nhận diện lĩnh vực. */
 interface ResearchRequestBody {
+  workspace_id?: string
   question: string
   clarification_answers?: Record<string, string>
   audience: ResearchOptions['audience']
   field?: Exclude<ResearchOptions['field'], ''>
+  contribution_type?: Exclude<ResearchOptions['contributionType'], '' | undefined>
+  target_venue?: string
+  user_results?: string
 }
 
 async function postResearch(
   base: { question: string; clarification_answers?: Record<string, string> },
   options: ResearchOptions,
+  workspaceId?: string | null,
 ) {
   const body: ResearchRequestBody = { ...base, audience: options.audience }
+  if (workspaceId) body.workspace_id = workspaceId
   if (options.field) body.field = options.field
+  if (options.contributionType) body.contribution_type = options.contributionType
+  if (options.targetVenue?.trim()) body.target_venue = options.targetVenue.trim()
+  if (options.userResults?.trim()) body.user_results = options.userResults.trim()
   const data = await postJson<ApiResearchClarification | ApiResearchTask>('/research/', body, ResearchError, {
     503: 'Dịch vụ LLM đang quá tải hoặc chưa cấu hình API key. Thử lại sau ít phút.',
   })
@@ -107,16 +116,22 @@ async function postResearch(
   return { kind: 'task', task: mapTask(data as ApiResearchTask) } satisfies CreateResearchResult
 }
 
-export function createResearch(question: string, options: ResearchOptions): Promise<CreateResearchResult> {
-  return postResearch({ question }, options)
+/** `workspaceId`: chỉ dùng PDF của phiên đó, không tìm nguồn ngoài; bỏ trống = thư viện chung + nguồn ngoài. */
+export function createResearch(
+  question: string,
+  options: ResearchOptions,
+  workspaceId?: string | null,
+): Promise<CreateResearchResult> {
+  return postResearch({ question }, options, workspaceId)
 }
 
 export function answerClarification(
   question: string,
   clarificationAnswers: Record<string, string>,
   options: ResearchOptions,
+  workspaceId?: string | null,
 ) {
-  return postResearch({ question, clarification_answers: clarificationAnswers }, options)
+  return postResearch({ question, clarification_answers: clarificationAnswers }, options, workspaceId)
 }
 
 export async function getResearchTask(id: string): Promise<ResearchTask> {
@@ -139,12 +154,52 @@ export function deleteResearchTask(id: string): Promise<void> {
   return apiFetch<void>(`/research/${id}`, { method: 'DELETE' }, ResearchError)
 }
 
-/** URL mở PDF báo cáo (backend biên dịch LaTeX IEEEtran, fallback HTML). */
-export function researchPdfUrl(id: string, options: { engine?: 'latex' | 'typst' | 'html'; download?: boolean } = {}): string {
-  // Mở bằng tab mới nên không gửi được header Authorization: đính token vào query.
-  return `/api/research/${id}/pdf${toQuery({
-    engine: options.engine ?? 'latex',
-    download: options.download ? 'true' : null,
+export type PdfEngine = 'latex' | 'typst' | 'html'
+export type PaperTemplate = 'ieee' | 'cvpr'
+export type ExportKind = 'pdf' | 'latex' | 'bib'
+
+export interface ExportOptions {
+  engine?: PdfEngine
+  template?: PaperTemplate
+  /** Bỏ qua chặn Quality Gate (bản nháp). */
+  draft?: boolean
+}
+
+/** URL xuất báo cáo: pdf (LaTeX IEEEtran mặc định, fallback HTML), latex (zip), bib. */
+export function researchExportUrl(id: string, kind: ExportKind, options: ExportOptions = {}): string {
+  // Mở bằng tab mới/thẻ <a> nên không gửi được header Authorization: đính token vào query.
+  return `/api/research/${id}/${kind}${toQuery({
+    engine: kind === 'pdf' ? (options.engine ?? 'latex') : null,
+    template: kind === 'bib' ? null : (options.template ?? null),
+    draft: options.draft && kind !== 'bib' ? 'true' : null,
     access_token: getToken(),
   })}`
+}
+
+export function researchPdfUrl(id: string, options: ExportOptions = {}): string {
+  return researchExportUrl(id, 'pdf', options)
+}
+
+/**
+ * Tải tệp xuất dạng Blob để bắt được lỗi (409 Quality Gate, 404...) thay vì mở tab chỉ hiện JSON lỗi.
+ * Lỗi ném ResearchError có `status` + `detail` từ backend.
+ */
+export async function fetchResearchExport(id: string, kind: ExportKind, options: ExportOptions = {}): Promise<Blob> {
+  let response: Response
+  try {
+    response = await fetch(researchExportUrl(id, kind, options))
+  } catch {
+    throw new ResearchError('Không thể kết nối tới máy chủ paperai (kiểm tra backend đã chạy chưa).', 0)
+  }
+  if (!response.ok) {
+    let detail = `Không xuất được tệp (${response.status}).`
+    try {
+      const body = (await response.json()) as { detail?: unknown }
+      if (typeof body?.detail === 'string') detail = body.detail
+    } catch {
+      // body không phải JSON
+    }
+    throw new ResearchError(detail, response.status)
+  }
+  return response.blob()
 }

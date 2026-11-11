@@ -30,6 +30,7 @@ export interface AppState {
   conversationId: string | null
   paperId: string | null
   sources: ResearchSource[]
+  sourcesLoading: boolean
   sourceRelations: SourceRelation[]
   activeTab: ActiveTab
   sourceFilter: SourceFilter
@@ -61,6 +62,7 @@ export const initialState: AppState = {
   conversationId: null,
   paperId: null,
   sources: [],
+  sourcesLoading: false,
   sourceRelations: [],
   activeTab: 'research',
   sourceFilter: 'all',
@@ -121,6 +123,7 @@ export type Action =
   | { type: 'ADVANCE_PROGRESS'; id: string }
   | { type: 'FINISH_PROGRESS'; id: string }
   | { type: 'ADD_SOURCES'; sources: ResearchSource[] }
+  | { type: 'SET_SOURCES_LOADING'; loading: boolean }
   | { type: 'SET_SOURCE_RELATIONS'; relations: SourceRelation[] }
   | { type: 'SET_SOURCE_FILTER'; filter: SourceFilter }
   | { type: 'SET_SOURCE_SEARCH'; value: string }
@@ -278,6 +281,8 @@ export function appReducer(state: AppState, action: Action): AppState {
       const fresh = action.sources.filter((s) => !existing.has(s.id))
       return fresh.length ? { ...state, sources: [...state.sources, ...fresh] } : state
     }
+    case 'SET_SOURCES_LOADING':
+      return { ...state, sourcesLoading: action.loading }
     case 'SET_SOURCE_RELATIONS':
       return { ...state, sourceRelations: action.relations }
     case 'SET_SOURCE_FILTER':

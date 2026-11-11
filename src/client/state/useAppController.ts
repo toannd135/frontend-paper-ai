@@ -12,6 +12,7 @@ import {
 } from '../api/research'
 import { getConversationByResearch, sendChat } from '../api/chat'
 import { uploadPaper, getPaper } from '../api/papers'
+import { getCurrentWorkspaceId } from './workspaceStore'
 import { appReducer, initialState, type AppState, type SourceSort } from './appReducer'
 
 const DRAFT_PREFIX = 'draft_'
@@ -139,6 +140,7 @@ export function useAppController() {
 
   const populateSourcesProgressively = useCallback(
     async (query: string) => {
+      dispatch({ type: 'SET_SOURCES_LOADING', loading: true })
       try {
         const found = await searchSources(query)
         // Giữ TOP_SOURCES bài liên quan nhất và chỉ các quan hệ nằm trọn trong tập đó.
@@ -151,13 +153,17 @@ export function useAppController() {
         const tickDelay = batchSize === 1 ? 260 : 200
         let i = 0
         const addBatch = () => {
-          if (i >= sources.length) return
+          if (i >= sources.length) {
+            dispatch({ type: 'SET_SOURCES_LOADING', loading: false })
+            return
+          }
           dispatch({ type: 'ADD_SOURCES', sources: sources.slice(i, i + batchSize) })
           i += batchSize
           schedule(addBatch, tickDelay)
         }
         addBatch()
       } catch (err) {
+        dispatch({ type: 'SET_SOURCES_LOADING', loading: false })
         warn(`⚠ ${errorMessage(err, 'Không tìm được nguồn từ OpenAlex.')}`)
       }
     },
@@ -256,7 +262,8 @@ export function useAppController() {
         finished: false,
       },
     })
-    void populateSourcesProgressively(stateRef.current.topic)
+    // phiên (workspace) là chế độ chỉ dùng PDF nội bộ: không hiện nguồn ngoài OpenAlex
+    if (!getCurrentWorkspaceId()) void populateSourcesProgressively(stateRef.current.topic)
     pollResearchTask(taskId, progressId)
     void refreshHistory()
   }, [pollResearchTask, populateSourcesProgressively, refreshHistory])
@@ -359,7 +366,7 @@ export function useAppController() {
         'Tôi đã hiểu chủ đề nghiên cứu của bạn.\nĐể xây dựng một bài báo phù hợp hơn, tôi cần xác định thêm một vài thông tin.',
         async () => {
           try {
-            const result = await createResearch(trimmed, options)
+            const result = await createResearch(trimmed, options, getCurrentWorkspaceId())
             if (result.kind === 'clarification') {
               dispatch({ type: 'SET_CLARIFICATION_QUESTIONS', questions: result.questions })
               schedule(() => askClarify(0), 400)
@@ -393,7 +400,12 @@ export function useAppController() {
       schedule(async () => {
         try {
           const answers = { ...stateRef.current.clarificationAnswers }
-          const result = await answerClarification(stateRef.current.topic, answers, stateRef.current.researchOptions)
+          const result = await answerClarification(
+            stateRef.current.topic,
+            answers,
+            stateRef.current.researchOptions,
+            getCurrentWorkspaceId(),
+          )
           if (result.kind === 'clarification') {
             dispatch({
               type: 'SET_CLARIFICATION_QUESTIONS',
@@ -453,7 +465,7 @@ export function useAppController() {
 
       void (async () => {
         try {
-          const info = await uploadPaper(file)
+          const info = await uploadPaper(file, getCurrentWorkspaceId())
           dispatch({ type: 'SET_PAPER_ID', id: info.id })
           dispatch({ type: 'UPDATE_PAPER_UPLOAD', id: msgId, status: info.status, error: null })
 

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react'
 import { Paperclip, ArrowUp } from 'lucide-react'
 import logo from '../../assets/logo.png'
-import { audienceOptions, fieldOptions, topicSuggestions } from '../constants'
-import type { ResearchAudience, ResearchField, ResearchOptions } from '../../types'
+import { audienceOptions, contributionOptions, fieldOptions, topicSuggestions } from '../constants'
+import type { ResearchAudience, ResearchContribution, ResearchField, ResearchOptions } from '../../types'
 import { useChatModels } from '../state/useChatModels'
 
 interface InitialStateProps {
@@ -14,6 +14,10 @@ export default function InitialState({ onSubmit, onUploadPaper }: InitialStatePr
   const [value, setValue] = useState('')
   const [audience, setAudience] = useState<ResearchAudience>('lecturer')
   const [field, setField] = useState<ResearchField>('')
+  const [contributionType, setContributionType] = useState<ResearchContribution>('')
+  const [targetVenue, setTargetVenue] = useState('')
+  const [userResults, setUserResults] = useState('')
+  const [showAdvanced, setShowAdvanced] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { models, selectedModel, setSelectedModel } = useChatModels()
 
@@ -35,9 +39,11 @@ export default function InitialState({ onSubmit, onUploadPaper }: InitialStatePr
     return () => clearTimeout(t)
   }, [])
 
+  const options: ResearchOptions = { audience, field, contributionType, targetVenue, userResults }
+
   const submit = () => {
     if (!value.trim()) return
-    onSubmit(value, { audience, field })
+    onSubmit(value, options)
   }
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -135,11 +141,55 @@ export default function InitialState({ onSubmit, onUploadPaper }: InitialStatePr
               <ArrowUp size={18} />
             </button>
           </div>
+          <div className="initial-advanced">
+            <button
+              type="button"
+              className="initial-advanced-toggle"
+              aria-expanded={showAdvanced}
+              onClick={() => setShowAdvanced((v) => !v)}
+            >
+              {showAdvanced ? 'Ẩn tùy chọn nâng cao' : 'Tùy chọn nâng cao (loại đóng góp, venue, kết quả thực nghiệm)'}
+            </button>
+            {showAdvanced && (
+              <div className="initial-advanced-body">
+                <select
+                  className="chat-model-select in-card"
+                  value={contributionType}
+                  onChange={(e) => setContributionType(e.target.value as ResearchContribution)}
+                  aria-label="Loại đóng góp khoa học"
+                >
+                  {contributionOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  className="initial-advanced-input"
+                  placeholder="Venue dự định gửi (ví dụ: IEEE ICC 2027)"
+                  value={targetVenue}
+                  maxLength={120}
+                  onChange={(e) => setTargetVenue(e.target.value)}
+                  aria-label="Venue dự định gửi bài"
+                />
+                <textarea
+                  rows={4}
+                  className="initial-advanced-input"
+                  placeholder={'Kết quả thực nghiệm đã có (không bắt buộc). Ví dụ:\nDataset CICDDoS2019, metric F1\nours: 0.95, 0.94, 0.96\nBaseline LSTM: 0.91, 0.92, 0.90'}
+                  value={userResults}
+                  maxLength={8000}
+                  onChange={(e) => setUserResults(e.target.value)}
+                  aria-label="Kết quả thực nghiệm đã có"
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="suggestion-row">
           {topicSuggestions.map((s) => (
-            <button key={s} className="suggestion-chip" onClick={() => onSubmit(s, { audience, field })} type="button">
+            <button key={s} className="suggestion-chip" onClick={() => onSubmit(s, options)} type="button">
               {s}
             </button>
           ))}

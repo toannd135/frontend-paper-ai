@@ -2530,3 +2530,58 @@ kbd {
   line-height: 18px;
   text-align: center;
 }
+
+/* ============ Tùy chọn nâng cao của form nghiên cứu ============ */
+.initial-advanced {
+  padding: 0 12px 8px;
+}
+.initial-advanced-toggle {
+  background: none;
+  border: 0;
+  padding: 2px 0;
+  font-size: 12px;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+.initial-advanced-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.initial-advanced-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border, rgba(128, 128, 128, 0.35));
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  resize: vertical;
+}
+
+/* Bộ chọn phiên (workspace) ở sidebar */
+.workspace-picker {
+  padding: 0 12px 8px;
+}
+.workspace-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.workspace-select {
+  flex: 1;
+  min-width: 0;
+}
+.workspace-add {
+  color: rgba(255, 255, 255, 0.8);
+  flex-shrink: 0;
+}
+.workspace-hint {
+  margin: 4px 2px 0;
+  font-size: 11px;
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.6);
+}

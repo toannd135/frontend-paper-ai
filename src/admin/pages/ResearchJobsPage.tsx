@@ -4,7 +4,8 @@ import { FileDown, Trash2, RotateCw } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import ApiErrorBanner from '../components/ApiErrorBanner'
 import { useAsyncList } from '../hooks/useAsyncList'
-import { deleteResearchTask, listResearchTasks, researchPdfUrl, type ResearchSummary } from '../../client/api/research'
+import { deleteResearchTask, listResearchTasks, type ResearchSummary } from '../../client/api/research'
+import { useOpenResearchPdf } from '../../client/lib/useOpenResearchPdf'
 import { ApiError } from '../../client/api/http'
 import type { ResearchStatus } from '../../types'
 
@@ -38,6 +39,7 @@ const hasActive = (items: ResearchSummary[]) => items.some((t) => t.status === '
 
 export default function ResearchJobsPage() {
   const { message } = AntApp.useApp()
+  const openResearchPdf = useOpenResearchPdf()
   const loader = useCallback(() => listResearchTasks({ limit: 200 }), [])
   const { items, total, loading, error, reload } = useAsyncList(loader, { pollMs: 4000, shouldPoll: hasActive })
 
@@ -119,13 +121,13 @@ export default function ResearchJobsPage() {
               width: 90,
               render: (_: unknown, r: ResearchSummary) => (
                 <div style={{ display: 'flex', gap: 4 }}>
-                  <Tooltip title="Xuất PDF (Typst)">
+                  <Tooltip title="Xuất PDF (LaTeX IEEEtran)">
                     <Button
                       type="text"
                       size="small"
                       icon={<FileDown size={14} />}
                       disabled={!r.hasReport}
-                      onClick={() => window.open(researchPdfUrl(r.id), '_blank', 'noopener,noreferrer')}
+                      onClick={() => void openResearchPdf(r.id)}
                     />
                   </Tooltip>
                   <Popconfirm

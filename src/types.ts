@@ -105,7 +105,15 @@ export type ResearchField =
   | 'economics'
   | 'education'
 
+/** Loại đóng góp khoa học (khớp `contribution_type` của POST /research); '' = tự phân loại. */
+export type ResearchContribution = '' | 'new_method' | 'improvement' | 'comparison' | 'system' | 'survey'
+
 export interface ResearchOptions {
   audience: ResearchAudience
   field: ResearchField
+  contributionType?: ResearchContribution
+  /** Hội nghị/tạp chí dự định gửi bài. */
+  targetVenue?: string
+  /** Kết quả thực nghiệm đã có (baseline, metric, dataset, số liệu từng lần chạy). */
+  userResults?: string
 }
