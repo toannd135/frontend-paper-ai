@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { App as AntApp, Input, Modal, Select, Tooltip } from 'antd'
 import { FolderPlus } from 'lucide-react'
-import { createWorkspace, listWorkspaces, type Workspace } from '../api/workspaces'
+import {
+  createWorkspace,
+  DOMAIN_OPTIONS,
+  domainLabel,
+  listWorkspaces,
+  type Workspace,
+  type WorkspaceDomain,
+} from '../api/workspaces'
 import { ApiError } from '../api/http'
 import { getCurrentWorkspaceId, setCurrentWorkspaceId, useCurrentWorkspaceId } from '../state/workspaceStore'
 
@@ -15,6 +22,7 @@ export default function WorkspacePicker() {
   const [loading, setLoading] = useState(false)
   const [creating, setCreating] = useState(false)
   const [name, setName] = useState('')
+  const [domain, setDomain] = useState<WorkspaceDomain>('mri_brain')
   const [saving, setSaving] = useState(false)
 
   const reload = useCallback(async () => {
@@ -41,7 +49,7 @@ export default function WorkspacePicker() {
     if (!trimmed) return
     setSaving(true)
     try {
-      const ws = await createWorkspace(trimmed)
+      const ws = await createWorkspace(trimmed, domain)
       setItems((prev) => [ws, ...prev])
       setCurrentWorkspaceId(ws.id)
       setCreating(false)
@@ -59,7 +67,7 @@ export default function WorkspacePicker() {
       <div className="workspace-picker-row">
         <Tooltip
           placement="right"
-          title="Chọn một kho dữ liệu riêng: chỉ dùng các PDF bạn đã tải vào kho đó, không tìm thêm trên mạng. Không chọn: dùng thư viện chung và tìm thêm bài trên mạng (OpenAlex)."
+          title="Chọn một kho dữ liệu riêng: chỉ dùng các PDF trong kho đó và bộ prompt theo loại kho (MRI não hoặc Deepfake). Không chọn: dùng thư viện chung, tìm thêm trên OpenAlex với prompt chung."
         >
           <Select
             size="small"
@@ -69,7 +77,7 @@ export default function WorkspacePicker() {
             onChange={(v) => setCurrentWorkspaceId(v === NONE ? null : v)}
             options={[
               { value: NONE, label: 'Thư viện chung (không chọn kho)' },
-              ...items.map((w) => ({ value: w.id, label: w.name })),
+              ...items.map((w) => ({ value: w.id, label: `${w.name} · ${domainLabel(w.domain)}` })),
             ]}
             popupMatchSelectWidth={false}
           />
@@ -101,6 +109,17 @@ export default function WorkspacePicker() {
           onChange={(e) => setName(e.target.value)}
           onPressEnter={() => void submitCreate()}
         />
+        <Select
+          className="workspace-domain-select"
+          style={{ width: '100%', marginTop: 12 }}
+          value={domain}
+          onChange={(v: WorkspaceDomain) => setDomain(v)}
+          options={DOMAIN_OPTIONS}
+        />
+        <p className="workspace-hint">
+          Loại kho quyết định bộ prompt khi nghiên cứu: MRI não chỉ dùng prompt MRI não, Deepfake chỉ dùng prompt deepfake. Không
+          chọn kho thì hệ thống tìm trên OpenAlex với prompt chung.
+        </p>
       </Modal>
     </div>
   )

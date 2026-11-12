@@ -98,6 +98,12 @@
   gap: 12px;
   margin-bottom: 16px;
 }
+.library-main-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 .library-main-head h2 {
   margin: 0;
   font-size: 18px;

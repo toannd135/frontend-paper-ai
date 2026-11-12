@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { App as AntApp, Button, Empty, Input, Modal, Popconfirm, Table, Tag, Tooltip, Upload } from 'antd'
+import { App as AntApp, Button, Empty, Input, Modal, Popconfirm, Select, Table, Tag, Tooltip, Upload } from 'antd'
 import { ArrowLeft, Database, FolderPlus, Library, MessageSquarePlus, RotateCcw, Trash2, UploadCloud } from 'lucide-react'
-import { createWorkspace, listWorkspaces, type Workspace } from '../api/workspaces'
+import {
+  createWorkspace,
+  DOMAIN_OPTIONS,
+  domainLabel,
+  listWorkspaces,
+  type Workspace,
+  type WorkspaceDomain,
+  updateWorkspaceDomain,
+} from '../api/workspaces'
 import { deletePaper, listPapers, reprocessPaper, uploadPaper, type PaperInfo } from '../api/papers'
 import { ApiError } from '../api/http'
 import { setCurrentWorkspaceId, useCurrentWorkspaceId } from '../state/workspaceStore'
@@ -33,6 +41,7 @@ export default function LibraryPage() {
   const [uploading, setUploading] = useState(0)
   const [creating, setCreating] = useState(false)
   const [newName, setNewName] = useState('')
+  const [domain, setDomain] = useState<WorkspaceDomain>('mri_brain')
   const [saving, setSaving] = useState(false)
   const timer = useRef<number | null>(null)
 
@@ -77,12 +86,22 @@ export default function LibraryPage() {
     }
   }, [papers, loadPapers])
 
+  const changeDomain = async (id: string, value: WorkspaceDomain) => {
+    try {
+      const ws = await updateWorkspaceDomain(id, value)
+      setWorkspaces((prev) => prev.map((w) => (w.id === ws.id ? ws : w)))
+      message.success(`Kho "${ws.name}" giờ là loại ${domainLabel(ws.domain)}.`)
+    } catch (err) {
+      message.error(errText(err, 'Không đổi được loại kho.'))
+    }
+  }
+
   const submitCreate = async () => {
     const name = newName.trim()
     if (!name) return
     setSaving(true)
     try {
-      const ws = await createWorkspace(name)
+      const ws = await createWorkspace(name, domain)
       setWorkspaces((prev) => [ws, ...prev])
       setCurrentWorkspaceId(ws.id)
       setCreating(false)
@@ -165,6 +184,7 @@ export default function LibraryPage() {
             >
               <Database size={15} />
               <span>{w.name}</span>
+              <Tag className="workspace-domain-tag">{domainLabel(w.domain)}</Tag>
             </button>
           ))}
           {workspaces.length === 0 && (
@@ -183,6 +203,18 @@ export default function LibraryPage() {
                 {!current && ' · tài liệu tải lên ở đây sẽ vào thư viện chung'}
               </p>
             </div>
+            <div className="library-main-actions">
+            {current && (
+              <Tooltip title="Loại kho quyết định bộ prompt khi nghiên cứu. Đổi loại áp cho lượt nghiên cứu sau, không ảnh hưởng lượt đang chạy.">
+                <Select
+                  className="workspace-domain-select"
+                  style={{ minWidth: 190 }}
+                  value={current.domain}
+                  options={DOMAIN_OPTIONS.map((o) => ({ ...o, label: `Loại: ${o.label}` }))}
+                  onChange={(v: WorkspaceDomain) => void changeDomain(current.id, v)}
+                />
+              </Tooltip>
+            )}
             {current && (
               <Link to="/workspace">
                 <Button type="primary" icon={<MessageSquarePlus size={15} />}>
@@ -190,6 +222,7 @@ export default function LibraryPage() {
                 </Button>
               </Link>
             )}
+            </div>
           </div>
 
           <Upload.Dragger
@@ -286,6 +319,17 @@ export default function LibraryPage() {
           onChange={(e) => setNewName(e.target.value)}
           onPressEnter={() => void submitCreate()}
         />
+        <Select
+          className="workspace-domain-select"
+          style={{ width: '100%', marginTop: 12 }}
+          value={domain}
+          onChange={(v: WorkspaceDomain) => setDomain(v)}
+          options={DOMAIN_OPTIONS}
+        />
+        <p className="workspace-hint">
+          Loại kho quyết định bộ prompt khi nghiên cứu: MRI não chỉ dùng prompt MRI não, Deepfake chỉ dùng prompt deepfake. Không
+          chọn kho thì hệ thống tìm trên OpenAlex với prompt chung.
+        </p>
       </Modal>
     </div>
   )
